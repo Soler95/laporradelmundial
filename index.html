@@ -8,49 +8,99 @@
 
 <body>
   <header>
-    <h1>⚽ Mundial en Directo</h1>
-    <p>Resultados actualizados automáticamente</p>
+    <h1>⚽ Mundial 2026</h1>
+    <p>Resultados en directo + próximos partidos</p>
   </header>
 
   <main>
-    <h2>Partidos en vivo</h2>
-    <div id="matches">Cargando datos...</div>
+
+    <section>
+      <h2>🔴 Partidos en directo</h2>
+      <div id="live">Cargando...</div>
+    </section>
+
+    <section>
+      <h2>📅 Próximos partidos</h2>
+      <div id="upcoming"></div>
+    </section>
+
   </main>
 
   <script>
-    async function loadMatches() {
-      const container = document.getElementById("matches");
+    // =========================
+    // PARTIDOS EN DIRECTO
+    // =========================
+    async function loadLive() {
+      const container = document.getElementById("live");
 
       try {
-        // Feed público (demo de partidos de fútbol en vivo)
-        const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4328");
+        const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/livescore.php?s=Soccer");
         const data = await res.json();
 
         container.innerHTML = "";
 
-        data.events.slice(0, 10).forEach(match => {
+        if (!data.events) {
+          container.innerHTML = "<p>No hay partidos en directo ahora mismo.</p>";
+          return;
+        }
+
+        data.events.slice(0, 5).forEach(match => {
           const div = document.createElement("div");
-          div.className = "match";
+          div.className = "card";
 
           div.innerHTML = `
-            <div class="teams">
-              <strong>${match.strHomeTeam}</strong>
-              <span>${match.intHomeScore ?? "-"} - ${match.intAwayScore ?? "-"}</span>
-              <strong>${match.strAwayTeam}</strong>
-            </div>
-            <div class="date">${match.dateEvent} ${match.strTime}</div>
+            <strong>${match.strHomeTeam}</strong>
+            <span>${match.intHomeScore} - ${match.intAwayScore}</span>
+            <strong>${match.strAwayTeam}</strong>
+            <p>Minuto: ${match.strProgress || "?"}</p>
           `;
 
           container.appendChild(div);
         });
 
-      } catch (err) {
-        container.innerHTML = "Error cargando datos en directo.";
+      } catch (e) {
+        container.innerHTML = "<p>Error cargando datos en vivo</p>";
       }
     }
 
-    loadMatches();
-    setInterval(loadMatches, 60000);
+    // =========================
+    // PARTIDOS FUTUROS (WORLD CUP)
+    // =========================
+    function loadUpcoming() {
+
+      const matches = [
+        { home: "México", away: "Sudáfrica", date: "11 Junio 2026" },
+        { home: "Canadá", away: "Bosnia", date: "12 Junio 2026" },
+        { home: "USA", away: "Paraguay", date: "12 Junio 2026" },
+        { home: "Brasil", away: "Marruecos", date: "13 Junio 2026" },
+        { home: "Francia", away: "Senegal", date: "15 Junio 2026" },
+        { home: "Argentina", away: "Argelia", date: "16 Junio 2026" },
+        { home: "España", away: "Uruguay", date: "17 Junio 2026" }
+      ];
+
+      const container = document.getElementById("upcoming");
+      container.innerHTML = "";
+
+      matches.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "card future";
+
+        div.innerHTML = `
+          <strong>${m.home}</strong>
+          <span>VS</span>
+          <strong>${m.away}</strong>
+          <p>📅 ${m.date}</p>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    loadLive();
+    loadUpcoming();
+
+    setInterval(loadLive, 60000);
   </script>
+
 </body>
 </html>
