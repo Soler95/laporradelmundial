@@ -83,7 +83,7 @@ async function loadUpcoming() {
 
   try {
     const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?season=2026&next=10",
+      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
       { headers: { "x-apisports-key": API_KEY } }
     );
 
@@ -124,7 +124,7 @@ async function loadResults() {
 
   try {
     const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?season=2026&status=ft",
+      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
       { headers: { "x-apisports-key": API_KEY } }
     );
 
