@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚽ Mundial Live Pro</h1>
-  <p>Resultados oficiales API-Football</p>
+  <p>Resultados en directo + calendario</p>
 </header>
 
 <main>
@@ -27,7 +27,7 @@
   </section>
 
   <section>
-    <h2>🏁 Resultados del Mundial</h2>
+    <h2>🏁 Resultados</h2>
     <div id="results" class="grid"></div>
   </section>
 
@@ -35,7 +35,8 @@
 
 <script>
 
-const API_KEY = "4e528f6cc710f75b4721e1b45cb145d8";
+// 🔑 PEGA TU API KEY AQUÍ
+const API_KEY = "e53016e9623ec17b07b5382a365c9024";
 
 // ================= LIVE =================
 async function loadLive() {
@@ -47,11 +48,10 @@ async function loadLive() {
     });
 
     const data = await res.json();
-
     box.innerHTML = "";
 
     if (!data.response.length) {
-      box.innerHTML = "<p>No hay partidos en directo ahora mismo.</p>";
+      box.innerHTML = "<p>No hay partidos en directo.</p>";
       return;
     }
 
@@ -72,7 +72,7 @@ async function loadLive() {
     });
 
   } catch (e) {
-    box.innerHTML = "<p>Error cargando partidos en directo</p>";
+    box.innerHTML = "<p>Error cargando en directo</p>";
   }
 }
 
@@ -86,13 +86,7 @@ async function loadUpcoming() {
     });
 
     const data = await res.json();
-
     box.innerHTML = "";
-
-    if (!data.response.length) {
-      box.innerHTML = "<p>No hay próximos partidos.</p>";
-      return;
-    }
 
     data.response.forEach(m => {
       const date = new Date(m.fixture.date).toLocaleString("es-ES");
@@ -127,13 +121,7 @@ async function loadResults() {
     });
 
     const data = await res.json();
-
     box.innerHTML = "";
-
-    if (!data.response.length) {
-      box.innerHTML = "<p>No hay resultados aún.</p>";
-      return;
-    }
 
     data.response.slice(0, 10).forEach(m => {
       const card = document.createElement("div");
@@ -156,7 +144,6 @@ async function loadResults() {
   }
 }
 
-// ================= INIT =================
 loadLive();
 loadUpcoming();
 loadResults();
