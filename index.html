@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚽ Mundial Live Pro</h1>
-  <p>Resultados en directo + calendario</p>
+  <p>Resultados y próximos partidos</p>
 </header>
 
 <main>
@@ -35,17 +35,18 @@
 
 <script>
 
-// 🔑 PEGA TU API KEY AQUÍ
-const API_KEY = "e53016e9623ec17b07b5382a365c9024";
+// 🔑 TU API KEY
+const API_KEY = "PEGA_AQUI_TU_API_KEY";
 
 // ================= LIVE =================
 async function loadLive() {
   const box = document.getElementById("live");
 
   try {
-    const res = await fetch("https://v3.football.api-sports.io/fixtures?live=all", {
-      headers: { "x-apisports-key": API_KEY }
-    });
+    const res = await fetch(
+      "https://v3.football.api-sports.io/fixtures?live=all",
+      { headers: { "x-apisports-key": API_KEY } }
+    );
 
     const data = await res.json();
     box.innerHTML = "";
@@ -76,17 +77,23 @@ async function loadLive() {
   }
 }
 
-// ================= UPCOMING =================
+// ================= UPCOMING (ARREGLADO) =================
 async function loadUpcoming() {
   const box = document.getElementById("upcoming");
 
   try {
-    const res = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026&next=10", {
-      headers: { "x-apisports-key": API_KEY }
-    });
+    const res = await fetch(
+      "https://v3.football.api-sports.io/fixtures?season=2026&next=10",
+      { headers: { "x-apisports-key": API_KEY } }
+    );
 
     const data = await res.json();
     box.innerHTML = "";
+
+    if (!data.response.length) {
+      box.innerHTML = "<p>No hay próximos partidos todavía.</p>";
+      return;
+    }
 
     data.response.forEach(m => {
       const date = new Date(m.fixture.date).toLocaleString("es-ES");
@@ -116,12 +123,18 @@ async function loadResults() {
   const box = document.getElementById("results");
 
   try {
-    const res = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026&status=ft", {
-      headers: { "x-apisports-key": API_KEY }
-    });
+    const res = await fetch(
+      "https://v3.football.api-sports.io/fixtures?season=2026&status=ft",
+      { headers: { "x-apisports-key": API_KEY } }
+    );
 
     const data = await res.json();
     box.innerHTML = "";
+
+    if (!data.response.length) {
+      box.innerHTML = "<p>No hay resultados aún.</p>";
+      return;
+    }
 
     data.response.slice(0, 10).forEach(m => {
       const card = document.createElement("div");
@@ -144,6 +157,7 @@ async function loadResults() {
   }
 }
 
+// INIT
 loadLive();
 loadUpcoming();
 loadResults();
