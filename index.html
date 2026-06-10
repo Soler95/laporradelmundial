@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mundial en Directo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <h1>⚽ Mundial en Directo</h1>
+    <p>Resultados actualizados automáticamente</p>
+  </header>
+
+  <main>
+    <h2>Partidos en vivo</h2>
+    <div id="matches">Cargando datos...</div>
+  </main>
+
+  <script>
+    async function loadMatches() {
+      const container = document.getElementById("matches");
+
+      try {
+        // Feed público (demo de partidos de fútbol en vivo)
+        const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/eventspastleague.php?id=4328");
+        const data = await res.json();
+
+        container.innerHTML = "";
+
+        data.events.slice(0, 10).forEach(match => {
+          const div = document.createElement("div");
+          div.className = "match";
+
+          div.innerHTML = `
+            <div class="teams">
+              <strong>${match.strHomeTeam}</strong>
+              <span>${match.intHomeScore ?? "-"} - ${match.intAwayScore ?? "-"}</span>
+              <strong>${match.strAwayTeam}</strong>
+            </div>
+            <div class="date">${match.dateEvent} ${match.strTime}</div>
+          `;
+
+          container.appendChild(div);
+        });
+
+      } catch (err) {
+        container.innerHTML = "Error cargando datos en directo.";
+      }
+    }
+
+    loadMatches();
+    setInterval(loadMatches, 60000);
+  </script>
+</body>
+</html>
