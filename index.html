@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mundial Live Pro</title>
+  <title>Mundial Live Híbrido</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header>
-  <h1>⚽ Mundial Live Pro</h1>
-  <p>Resultados y próximos partidos</p>
+  <h1>⚽ Mundial Live</h1>
+  <p>Datos combinados (API estable)</p>
 </header>
 
 <main>
@@ -35,79 +35,71 @@
 
 <script>
 
-// 🔑 TU API KEY
-const API_KEY = "e53016e9623ec17b07b5382a365c9024";
-
-// ================= LIVE =================
+//////////////////////////////
+// 🔴 LIVE (TheSportsDB)
+//////////////////////////////
 async function loadLive() {
   const box = document.getElementById("live");
 
   try {
-    const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
-      { headers: { "x-apisports-key": API_KEY } }
-    );
-
+    const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/livescore.php?s=Soccer");
     const data = await res.json();
+
     box.innerHTML = "";
 
-    if (!data.response.length) {
+    if (!data.events) {
       box.innerHTML = "<p>No hay partidos en directo.</p>";
       return;
     }
 
-    data.response.forEach(m => {
+    data.events.slice(0, 5).forEach(m => {
       const card = document.createElement("div");
       card.className = "card live";
 
       card.innerHTML = `
         <div class="teams">
-          <span>${m.teams.home.name}</span>
-          <strong>${m.goals.home ?? 0} - ${m.goals.away ?? 0}</strong>
-          <span>${m.teams.away.name}</span>
+          <span>${m.strHomeTeam}</span>
+          <strong>${m.intHomeScore ?? 0} - ${m.intAwayScore ?? 0}</strong>
+          <span>${m.strAwayTeam}</span>
         </div>
-        <div class="status">🔴 ${m.fixture.status.long}</div>
       `;
 
       box.appendChild(card);
     });
 
   } catch (e) {
-    box.innerHTML = "<p>Error cargando en directo</p>";
+    box.innerHTML = "<p>Error cargando directo</p>";
   }
 }
 
-// ================= UPCOMING (ARREGLADO) =================
+//////////////////////////////
+// 📅 UPCOMING (TheSportsDB)
+//////////////////////////////
 async function loadUpcoming() {
   const box = document.getElementById("upcoming");
 
   try {
-    const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
-      { headers: { "x-apisports-key": API_KEY } }
-    );
-
+    const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328");
     const data = await res.json();
+
     box.innerHTML = "";
 
-    if (!data.response.length) {
-      box.innerHTML = "<p>No hay próximos partidos todavía.</p>";
+    if (!data.events) {
+      box.innerHTML = "<p>No hay próximos partidos.</p>";
       return;
     }
 
-    data.response.forEach(m => {
-      const date = new Date(m.fixture.date).toLocaleString("es-ES");
-
+    data.events.slice(0, 8).forEach(m => {
       const card = document.createElement("div");
       card.className = "card future";
 
       card.innerHTML = `
         <div class="teams">
-          <span>${m.teams.home.name}</span>
+          <span>${m.strHomeTeam}</span>
           <strong>VS</strong>
-          <span>${m.teams.away.name}</span>
+          <span>${m.strAwayTeam}</span>
         </div>
-        <div class="status">📅 ${date}</div>
+        <div class="status">📅 ${m.dateEvent}</div>
       `;
 
       box.appendChild(card);
@@ -118,33 +110,30 @@ async function loadUpcoming() {
   }
 }
 
-// ================= RESULTS =================
+//////////////////////////////
+// 🏁 RESULTS (OpenLigaDB fallback)
+//////////////////////////////
 async function loadResults() {
   const box = document.getElementById("results");
 
   try {
-    const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
-      { headers: { "x-apisports-key": API_KEY } }
-    );
-
+    const res = await fetch("https://api.openligadb.de/getmatchdata/bl1/2024");
     const data = await res.json();
+
     box.innerHTML = "";
 
-    if (!data.response.length) {
-      box.innerHTML = "<p>No hay resultados aún.</p>";
-      return;
-    }
+    data.slice(0, 10).forEach(m => {
+      const home = m.team1.teamName;
+      const away = m.team2.teamName;
 
-    data.response.slice(0, 10).forEach(m => {
       const card = document.createElement("div");
       card.className = "card";
 
       card.innerHTML = `
         <div class="teams">
-          <span>${m.teams.home.name}</span>
-          <strong>${m.goals.home} - ${m.goals.away}</strong>
-          <span>${m.teams.away.name}</span>
+          <span>${home}</span>
+          <strong>${m.matchResults?.[0]?.pointsTeam1 ?? 0} - ${m.matchResults?.[0]?.pointsTeam2 ?? 0}</strong>
+          <span>${away}</span>
         </div>
         <div class="status">🏁 Finalizado</div>
       `;
@@ -157,7 +146,6 @@ async function loadResults() {
   }
 }
 
-// INIT
 loadLive();
 loadUpcoming();
 loadResults();
