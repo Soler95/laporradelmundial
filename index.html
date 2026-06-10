@@ -77,7 +77,10 @@ table.rank tr:hover td{background:#0e2040}
 </nav>
 
 <!-- PARTIDOS -->
-<div id="partidos" class="page active"></div>
+<div id="partidos" class="page active">
+  <div id="matchList"></div>
+  <div id="scorers"></div>
+</div>
 
 <!-- GRUPOS -->
 <div id="grupos" class="page">
@@ -249,6 +252,7 @@ const matches=[
 ];
 
 // ── RENDER PARTIDOS ───────────────────────────────────
+let matchesHtml=''; // cached so scorers div survives re-renders
 function renderMatches(liveData){
   let html='';
   let curG='';
@@ -284,24 +288,42 @@ function renderMatches(liveData){
       <span class="m-info">${m.stadium}</span>
     </div>`;
   });
-  document.getElementById('partidos').innerHTML=html;
+  document.getElementById('matchList').innerHTML=html;
 }
 renderMatches(null);
 
+// ── RENDER GOLEADORES ────────────────────────────────
+function renderScorers(list){
+  const el=document.getElementById('scorers');
+  if(!list||!list.length){el.innerHTML='';return;}
+  const medals=['&#129351;','&#129352;','&#129353;'];
+  el.innerHTML=`<div class="slabel">&#9917; Maximos goleadores</div>`+
+    list.slice(0,3).map((s,i)=>`
+    <div class="match" style="gap:.65rem">
+      <span class="m-status s-done" style="font-size:1.1rem">${medals[i]}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.82rem;font-weight:500">${s.name}</div>
+        <div style="font-size:.65rem;color:#6a8faa">${s.team}</div>
+      </div>
+      <div style="text-align:right">
+        <span style="font-size:1.25rem;font-weight:700;color:#c9a227">${s.goals}</span>
+        <span style="font-size:.6rem;color:#4a6a8a;display:block">goles</span>
+      </div>
+    </div>`).join('');
+}
+
 // ── ESPN API AUTO-UPDATE ──────────────────────────────
-const ESPN_URL='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
+const ESPN_BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 
 function normalizeName(n){
   return n.toLowerCase()
     .replace(/\./g,'').replace(/-/g,' ')
-    .replace(/united states/,'usa')
-    .replace(/united states of america/,'usa')
-    .replace(/ivory coast/,'c. de marfil')
-    .replace(/côte d'ivoire/,'c. de marfil')
+    .replace(/united states of america/,'usa').replace(/united states/,'usa')
+    .replace(/ivory coast|c.te d.ivoire/,'c. de marfil')
     .replace(/netherlands/,'paises bajos')
-    .replace(/türkiye/,'turquia').replace(/turkey/,'turquia')
+    .replace(/t.rkiye|turkey/,'turquia')
     .replace(/south korea/,'corea del sur')
-    .replace(/dr congo/,'rd congo').replace(/democratic republic of congo/,'rd congo')
+    .replace(/dr congo|democratic republic of congo/,'rd congo')
     .replace(/czech republic/,'rep. checa')
     .replace(/cape verde/,'cabo verde')
     .replace(/saudi arabia/,'arabia saudi')
@@ -313,41 +335,59 @@ function normalizeName(n){
 
 async function fetchScores(){
   try{
-    const r=await fetch(ESPN_URL,{cache:'no-store'});
-    if(!r.ok)throw new Error('HTTP '+r.status);
+    const r=await fetch(ESPN_BASE+'/scoreboard',{cache:'no-store'});
+    if(!r.ok)throw new Error();
     const d=await r.json();
-    const events=d.events||[];
     const liveMap={};
-    events.forEach(ev=>{
+    (d.events||[]).forEach(ev=>{
       const comp=ev.competitions&&ev.competitions[0];
       if(!comp)return;
       const st=comp.status&&comp.status.type&&comp.status.type.name;
-      const comps=comp.competitors||[];
-      const home=comps.find(c=>c.homeAway==='home');
-      const away=comps.find(c=>c.homeAway==='away');
+      const home=comp.competitors.find(c=>c.homeAway==='home');
+      const away=comp.competitors.find(c=>c.homeAway==='away');
       if(!home||!away)return;
       const hn=normalizeName(home.team.displayName||'');
       const an=normalizeName(away.team.displayName||'');
       const status=st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre';
-      const clock=comp.status&&comp.status.displayClock;
-      liveMap[hn+'|'+an]={status,homeScore:home.score||'0',awayScore:away.score||'0',clock};
+      liveMap[hn+'|'+an]={status,homeScore:home.score||'0',awayScore:away.score||'0',clock:comp.status&&comp.status.displayClock};
     });
-    // Map back to our matches array
-    const liveData=matches.map(m=>{
+    renderMatches(matches.map(m=>{
       const hn=normalizeName(m.espnTeams[0]);
       const an=normalizeName(m.espnTeams[1]);
       return liveMap[hn+'|'+an]||liveMap[an+'|'+hn]||null;
-    });
-    renderMatches(liveData);
-    const now=new Date();
-    document.getElementById('sync').textContent='Actualizado: '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    }));
+    document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
   } catch(e){
-    document.getElementById('sync').textContent='Sin conexion con API — datos estaticos';
+    document.getElementById('sync').textContent='Sin conexion — datos estaticos';
   }
 }
 
-fetchScores();
-setInterval(fetchScores,60000);
+async function fetchScorers(){
+  try{
+    // ESPN leaders endpoint for goals in the World Cup
+    const r=await fetch(ESPN_BASE+'/leaders',{cache:'no-store'});
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    // Navigate ESPN leaders structure: categories -> leaders
+    const cats=d.categories||[];
+    const goalCat=cats.find(c=>(c.name||'').toLowerCase().includes('goal')||
+                                (c.abbreviation||'').toLowerCase()==='g')||cats[0];
+    if(!goalCat)return;
+    const list=(goalCat.leaders||[]).slice(0,3).map(l=>({
+      name: l.athlete&&l.athlete.displayName||'—',
+      team: l.team&&l.team.displayName||'',
+      goals: l.value||0
+    }));
+    if(list.length)renderScorers(list);
+  } catch(e){/* silently ignore — scorers div stays empty */}
+}
+
+async function refresh(){
+  await fetchScores();
+  await fetchScorers();
+}
+refresh();
+setInterval(refresh,60000);
 </script>
 </body>
 </html>
