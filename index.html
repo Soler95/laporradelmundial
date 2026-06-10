@@ -11,7 +11,7 @@
 
 <header>
   <h1>⚽ Mundial Live Pro</h1>
-  <p>Resultados oficiales en tiempo real</p>
+  <p>Resultados oficiales API-Football</p>
 </header>
 
 <main>
@@ -26,11 +26,16 @@
     <div id="upcoming" class="grid"></div>
   </section>
 
+  <section>
+    <h2>🏁 Resultados del Mundial</h2>
+    <div id="results" class="grid"></div>
+  </section>
+
 </main>
 
 <script>
 
-const API_KEY = "TU_API_KEY"; // 👈 pon tu clave aquí
+const API_KEY = "TU_API_KEY";
 
 // ================= LIVE =================
 async function loadLive() {
@@ -38,9 +43,7 @@ async function loadLive() {
 
   try {
     const res = await fetch("https://v3.football.api-sports.io/fixtures?live=all", {
-      headers: {
-        "x-apisports-key": API_KEY
-      }
+      headers: { "x-apisports-key": API_KEY }
     });
 
     const data = await res.json();
@@ -69,7 +72,7 @@ async function loadLive() {
     });
 
   } catch (e) {
-    box.innerHTML = "<p>Error cargando datos en vivo</p>";
+    box.innerHTML = "<p>Error cargando partidos en directo</p>";
   }
 }
 
@@ -78,15 +81,18 @@ async function loadUpcoming() {
   const box = document.getElementById("upcoming");
 
   try {
-    const res = await fetch("https://v3.football.api-sports.io/fixtures?next=10", {
-      headers: {
-        "x-apisports-key": API_KEY
-      }
+    const res = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026&next=10", {
+      headers: { "x-apisports-key": API_KEY }
     });
 
     const data = await res.json();
 
     box.innerHTML = "";
+
+    if (!data.response.length) {
+      box.innerHTML = "<p>No hay próximos partidos.</p>";
+      return;
+    }
 
     data.response.forEach(m => {
       const date = new Date(m.fixture.date).toLocaleString("es-ES");
@@ -111,8 +117,49 @@ async function loadUpcoming() {
   }
 }
 
+// ================= RESULTS =================
+async function loadResults() {
+  const box = document.getElementById("results");
+
+  try {
+    const res = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026&status=ft", {
+      headers: { "x-apisports-key": API_KEY }
+    });
+
+    const data = await res.json();
+
+    box.innerHTML = "";
+
+    if (!data.response.length) {
+      box.innerHTML = "<p>No hay resultados aún.</p>";
+      return;
+    }
+
+    data.response.slice(0, 10).forEach(m => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="teams">
+          <span>${m.teams.home.name}</span>
+          <strong>${m.goals.home} - ${m.goals.away}</strong>
+          <span>${m.teams.away.name}</span>
+        </div>
+        <div class="status">🏁 Finalizado</div>
+      `;
+
+      box.appendChild(card);
+    });
+
+  } catch (e) {
+    box.innerHTML = "<p>Error cargando resultados</p>";
+  }
+}
+
+// ================= INIT =================
 loadLive();
 loadUpcoming();
+loadResults();
 
 setInterval(loadLive, 60000);
 
