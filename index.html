@@ -44,7 +44,7 @@ async function loadLive() {
 
   try {
     const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?live=all",
+      "https://v3.football.api-sports.io/fixtures?league=1&status=TBD,NS",
       { headers: { "x-apisports-key": API_KEY } }
     );
 
