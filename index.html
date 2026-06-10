@@ -1,158 +1,369 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mundial Live Híbrido</title>
-  <link rel="stylesheet" href="style.css">
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mundial 2026 🏆</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a1628;color:#e8edf5;min-height:100vh}
+a{color:inherit;text-decoration:none}
 
+/* HEADER */
+header{background:linear-gradient(135deg,#0a1628 0%,#1a3a5c 100%);border-bottom:2px solid #c9a227;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem}
+header .logo{font-size:2rem}
+header h1{font-size:1.2rem;font-weight:700;color:#fff;letter-spacing:.02em}
+header p{font-size:.75rem;color:#8faabf;margin-top:2px}
+.badge-live{background:#c9a227;color:#0a1628;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+
+/* TABS */
+nav{display:flex;background:#0e2040;border-bottom:1px solid #1e3a5a}
+nav button{flex:1;padding:.75rem .5rem;background:none;border:none;color:#6a8faa;font-size:.85rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+nav button.active{color:#c9a227;border-bottom-color:#c9a227}
+
+/* CONTENT */
+.page{display:none;padding:1rem}
+.page.active{display:block}
+
+/* SECTION LABEL */
+.slabel{font-size:.65rem;font-weight:700;letter-spacing:.1em;color:#8faabf;text-transform:uppercase;margin:1rem 0 .4rem;padding-left:2px}
+.slabel:first-child{margin-top:0}
+
+/* MATCH CARD */
+.match{background:#0e2040;border:1px solid #1e3a5a;border-radius:8px;padding:.6rem .8rem;margin-bottom:.35rem;display:flex;align-items:center;gap:.5rem}
+.match.live{border-color:#c9a227}
+.match.done{opacity:.8}
+.m-status{font-size:.6rem;font-weight:700;min-width:44px;text-align:center}
+.m-status.s-live{color:#f5c518}
+.m-status.s-done{color:#4caf50}
+.m-status.s-soon{color:#6a8faa}
+.m-teams{flex:1;display:flex;align-items:center;gap:.4rem;justify-content:center}
+.m-team{font-size:.8rem;font-weight:500;min-width:90px;white-space:nowrap}
+.m-team.right{text-align:right}
+.m-score{display:flex;align-items:center;gap:3px}
+.sc{background:#152d4a;border:1px solid #1e3a5a;border-radius:4px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700}
+.sep{font-size:.7rem;color:#3a5a7a}
+.m-group{font-size:.6rem;color:#4a6a8a;white-space:nowrap;min-width:36px;text-align:right}
+
+/* GROUPS TAB */
+.group-block{background:#0e2040;border:1px solid #1e3a5a;border-radius:8px;margin-bottom:.75rem;overflow:hidden}
+.group-header{background:#152d4a;padding:.5rem .8rem;font-size:.75rem;font-weight:700;color:#c9a227;letter-spacing:.05em}
+.group-team{display:flex;align-items:center;gap:.5rem;padding:.45rem .8rem;border-top:1px solid #1e3a5a;font-size:.82rem}
+.group-team:first-of-type{border-top:none}
+.gt-flag{font-size:1rem}
+.gt-name{flex:1}
+.gt-pts{font-weight:700;color:#c9a227;min-width:20px;text-align:right}
+.gt-stats{font-size:.68rem;color:#4a6a8a;min-width:70px;text-align:right}
+
+/* RANKING TABLE */
+.ranking{width:100%;border-collapse:collapse;font-size:.82rem}
+.ranking th{font-size:.63rem;font-weight:600;color:#6a8faa;text-transform:uppercase;letter-spacing:.06em;padding:.4rem .5rem;text-align:left;border-bottom:1px solid #1e3a5a}
+.ranking td{padding:.45rem .5rem;border-bottom:1px solid #0e2040}
+.ranking tr:hover td{background:#0e2040}
+.r-pos{font-weight:700;color:#c9a227;width:28px}
+.r-pos.top3{color:#f5c518}
+.r-name{font-weight:500}
+.r-pts{font-weight:700;text-align:right}
+.r-aciertos{color:#6a8faa;text-align:center}
+.medal{font-size:.9rem}
+.note{font-size:.72rem;color:#4a6a8a;margin-top:.75rem;padding:.6rem .8rem;background:#0e2040;border-radius:6px;border-left:3px solid #1e3a5a;line-height:1.5}
+</style>
+</head>
 <body>
 
 <header>
-  <h1>⚽ Mundial Live</h1>
-  <p>Datos combinados (API estable)</p>
+  <div class="logo">⚽</div>
+  <div>
+    <h1>Mundial 2026 <span class="badge-live">EN VIVO</span></h1>
+    <p>Estados Unidos · México · Canadá — 11 Jun → 19 Jul</p>
+  </div>
 </header>
 
-<main>
+<nav>
+  <button class="active" onclick="show('partidos',this)">Partidos</button>
+  <button onclick="show('grupos',this)">Grupos</button>
+  <button onclick="show('ranking',this)">🏆 Ranking</button>
+</nav>
 
-  <section>
-    <h2>🔴 En directo</h2>
-    <div id="live" class="grid"></div>
-  </section>
+<!-- ======= PARTIDOS ======= -->
+<div id="partidos" class="page active">
 
-  <section>
-    <h2>📅 Próximos partidos</h2>
-    <div id="upcoming" class="grid"></div>
-  </section>
+  <div class="slabel">Grupo A</div>
+  <div class="match done"><span class="m-status s-done">FIN</span><div class="m-teams"><span class="m-team right">🇲🇽 México</span><div class="m-score"><span class="sc">-</span><span class="sep">-</span><span class="sc">-</span></div><span class="m-team">🇿🇦 Sudáfrica</span></div><span class="m-group">11 Jun</span></div>
+  <div class="match done"><span class="m-status s-done">FIN</span><div class="m-teams"><span class="m-team right">🇰🇷 Corea del Sur</span><div class="m-score"><span class="sc">-</span><span class="sep">-</span><span class="sc">-</span></div><span class="m-team">🇨🇿 Rep. Checa</span></div><span class="m-group">11 Jun</span></div>
+  <div class="match"><span class="m-status s-soon">18 Jun</span><div class="m-teams"><span class="m-team right">🇨🇿 Rep. Checa</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇿🇦 Sudáfrica</span></div><span class="m-group">Atlanta</span></div>
+  <div class="match"><span class="m-status s-soon">18 Jun</span><div class="m-teams"><span class="m-team right">🇲🇽 México</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇰🇷 Corea del Sur</span></div><span class="m-group">Guadalajara</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🇨🇿 Rep. Checa</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇲🇽 México</span></div><span class="m-group">CDMX</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🇿🇦 Sudáfrica</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇰🇷 Corea del Sur</span></div><span class="m-group">Monterrey</span></div>
 
-  <section>
-    <h2>🏁 Resultados</h2>
-    <div id="results" class="grid"></div>
-  </section>
+  <div class="slabel">Grupo B</div>
+  <div class="match"><span class="m-status s-soon">12 Jun</span><div class="m-teams"><span class="m-team right">🇨🇦 Canadá</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇧🇦 Bosnia</span></div><span class="m-group">Toronto</span></div>
+  <div class="match"><span class="m-status s-soon">13 Jun</span><div class="m-teams"><span class="m-team right">🇶🇦 Qatar</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇭 Suiza</span></div><span class="m-group">San Francisco</span></div>
+  <div class="match"><span class="m-status s-soon">18 Jun</span><div class="m-teams"><span class="m-team right">🇨🇭 Suiza</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇧🇦 Bosnia</span></div><span class="m-group">Los Ángeles</span></div>
+  <div class="match"><span class="m-status s-soon">18 Jun</span><div class="m-teams"><span class="m-team right">🇨🇦 Canadá</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇶🇦 Qatar</span></div><span class="m-group">Vancouver</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🇨🇭 Suiza</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇦 Canadá</span></div><span class="m-group">Vancouver</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🇧🇦 Bosnia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇶🇦 Qatar</span></div><span class="m-group">Seattle</span></div>
 
-</main>
+  <div class="slabel">Grupo C</div>
+  <div class="match"><span class="m-status s-soon">13 Jun</span><div class="m-teams"><span class="m-team right">🇧🇷 Brasil</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇲🇦 Marruecos</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">13 Jun</span><div class="m-teams"><span class="m-team right">🇭🇹 Haití</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">19 Jun</span><div class="m-teams"><span class="m-team right">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇲🇦 Marruecos</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">19 Jun</span><div class="m-teams"><span class="m-team right">🇧🇷 Brasil</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇭🇹 Haití</span></div><span class="m-group">Filadelfia</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Escocia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇧🇷 Brasil</span></div><span class="m-group">Miami</span></div>
+  <div class="match"><span class="m-status s-soon">24 Jun</span><div class="m-teams"><span class="m-team right">🇲🇦 Marruecos</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇭🇹 Haití</span></div><span class="m-group">Atlanta</span></div>
+
+  <div class="slabel">Grupo D</div>
+  <div class="match"><span class="m-status s-soon">12 Jun</span><div class="m-teams"><span class="m-team right">🇺🇸 EE.UU.</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇵🇾 Paraguay</span></div><span class="m-group">Los Ángeles</span></div>
+  <div class="match"><span class="m-status s-soon">13 Jun</span><div class="m-teams"><span class="m-team right">🇦🇺 Australia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇹🇷 Turquía</span></div><span class="m-group">Vancouver</span></div>
+  <div class="match"><span class="m-status s-soon">19 Jun</span><div class="m-teams"><span class="m-team right">🇹🇷 Turquía</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇵🇾 Paraguay</span></div><span class="m-group">San Francisco</span></div>
+  <div class="match"><span class="m-status s-soon">19 Jun</span><div class="m-teams"><span class="m-team right">🇺🇸 EE.UU.</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇦🇺 Australia</span></div><span class="m-group">Seattle</span></div>
+  <div class="match"><span class="m-status s-soon">25 Jun</span><div class="m-teams"><span class="m-team right">🇹🇷 Turquía</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇸 EE.UU.</span></div><span class="m-group">Los Ángeles</span></div>
+  <div class="match"><span class="m-status s-soon">25 Jun</span><div class="m-teams"><span class="m-team right">🇵🇾 Paraguay</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇦🇺 Australia</span></div><span class="m-group">San Francisco</span></div>
+
+  <div class="slabel">Grupo E</div>
+  <div class="match"><span class="m-status s-soon">14 Jun</span><div class="m-teams"><span class="m-team right">🇩🇪 Alemania</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇼 Curazao</span></div><span class="m-group">Houston</span></div>
+  <div class="match"><span class="m-status s-soon">14 Jun</span><div class="m-teams"><span class="m-team right">🇨🇮 Costa de Marfil</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇪🇨 Ecuador</span></div><span class="m-group">Kansas City</span></div>
+  <div class="match"><span class="m-status s-soon">20 Jun</span><div class="m-teams"><span class="m-team right">🇪🇨 Ecuador</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇼 Curazao</span></div><span class="m-group">Kansas City</span></div>
+  <div class="match"><span class="m-status s-soon">20 Jun</span><div class="m-teams"><span class="m-team right">🇩🇪 Alemania</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇮 Costa de Marfil</span></div><span class="m-group">Dallas</span></div>
+  <div class="match"><span class="m-status s-soon">25 Jun</span><div class="m-teams"><span class="m-team right">🇪🇨 Ecuador</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇩🇪 Alemania</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">25 Jun</span><div class="m-teams"><span class="m-team right">🇨🇼 Curazao</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇮 Costa de Marfil</span></div><span class="m-group">Miami</span></div>
+
+  <div class="slabel">Grupo F</div>
+  <div class="match"><span class="m-status s-soon">14 Jun</span><div class="m-teams"><span class="m-team right">🇳🇱 Países Bajos</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇸🇪 Suecia</span></div><span class="m-group">Monterrey</span></div>
+  <div class="match"><span class="m-status s-soon">14 Jun</span><div class="m-teams"><span class="m-team right">🇯🇵 Japón</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇹🇳 Túnez</span></div><span class="m-group">Houston</span></div>
+  <div class="match"><span class="m-status s-soon">20 Jun</span><div class="m-teams"><span class="m-team right">🇸🇪 Suecia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇹🇳 Túnez</span></div><span class="m-group">Monterrey</span></div>
+  <div class="match"><span class="m-status s-soon">20 Jun</span><div class="m-teams"><span class="m-team right">🇳🇱 Países Bajos</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇯🇵 Japón</span></div><span class="m-group">Dallas</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇸🇪 Suecia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇯🇵 Japón</span></div><span class="m-group">Monterrey</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇹🇳 Túnez</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇳🇱 Países Bajos</span></div><span class="m-group">Houston</span></div>
+
+  <div class="slabel">Grupo G</div>
+  <div class="match"><span class="m-status s-soon">15 Jun</span><div class="m-teams"><span class="m-team right">🇧🇪 Bélgica</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇪🇬 Egipto</span></div><span class="m-group">Seattle</span></div>
+  <div class="match"><span class="m-status s-soon">15 Jun</span><div class="m-teams"><span class="m-team right">🇮🇷 Irán</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇳🇿 Nueva Zelanda</span></div><span class="m-group">Los Ángeles</span></div>
+  <div class="match"><span class="m-status s-soon">21 Jun</span><div class="m-teams"><span class="m-team right">🇧🇪 Bélgica</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇳🇿 Nueva Zelanda</span></div><span class="m-group">Seattle</span></div>
+  <div class="match"><span class="m-status s-soon">21 Jun</span><div class="m-teams"><span class="m-team right">🇮🇷 Irán</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇪🇬 Egipto</span></div><span class="m-group">Los Ángeles</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇪🇬 Egipto</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇳🇿 Nueva Zelanda</span></div><span class="m-group">Seattle</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇧🇪 Bélgica</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇮🇷 Irán</span></div><span class="m-group">Los Ángeles</span></div>
+
+  <div class="slabel">Grupo H — España ⭐</div>
+  <div class="match"><span class="m-status s-soon">15 Jun</span><div class="m-teams"><span class="m-team right">🇪🇸 España</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇻 Cabo Verde</span></div><span class="m-group">Atlanta</span></div>
+  <div class="match"><span class="m-status s-soon">15 Jun</span><div class="m-teams"><span class="m-team right">🇸🇦 Arabia Saudí</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇾 Uruguay</span></div><span class="m-group">Miami</span></div>
+  <div class="match"><span class="m-status s-soon">21 Jun</span><div class="m-teams"><span class="m-team right">🇪🇸 España</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇸🇦 Arabia Saudí</span></div><span class="m-group">Atlanta</span></div>
+  <div class="match"><span class="m-status s-soon">21 Jun</span><div class="m-teams"><span class="m-team right">🇨🇻 Cabo Verde</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇾 Uruguay</span></div><span class="m-group">Miami</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🇪🇸 España</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇾 Uruguay</span></div><span class="m-group">Guadalajara</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🇨🇻 Cabo Verde</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇸🇦 Arabia Saudí</span></div><span class="m-group">Miami</span></div>
+
+  <div class="slabel">Grupo I</div>
+  <div class="match"><span class="m-status s-soon">16 Jun</span><div class="m-teams"><span class="m-team right">🇫🇷 Francia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇸🇳 Senegal</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">16 Jun</span><div class="m-teams"><span class="m-team right">🇮🇶 Irak</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇳🇴 Noruega</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">22 Jun</span><div class="m-teams"><span class="m-team right">🇳🇴 Noruega</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇸🇳 Senegal</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">22 Jun</span><div class="m-teams"><span class="m-team right">🇫🇷 Francia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇮🇶 Irak</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇳🇴 Noruega</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇫🇷 Francia</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">26 Jun</span><div class="m-teams"><span class="m-team right">🇸🇳 Senegal</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇮🇶 Irak</span></div><span class="m-group">NY/NJ</span></div>
+
+  <div class="slabel">Grupo J</div>
+  <div class="match"><span class="m-status s-soon">16 Jun</span><div class="m-teams"><span class="m-team right">🇦🇷 Argentina</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇩🇿 Argelia</span></div><span class="m-group">Kansas City</span></div>
+  <div class="match"><span class="m-status s-soon">16 Jun</span><div class="m-teams"><span class="m-team right">🇦🇹 Austria</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇯🇴 Jordania</span></div><span class="m-group">San Francisco</span></div>
+  <div class="match"><span class="m-status s-soon">22 Jun</span><div class="m-teams"><span class="m-team right">🇦🇷 Argentina</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇦🇹 Austria</span></div><span class="m-group">Kansas City</span></div>
+  <div class="match"><span class="m-status s-soon">22 Jun</span><div class="m-teams"><span class="m-team right">🇩🇿 Argelia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇯🇴 Jordania</span></div><span class="m-group">Dallas</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🇦🇷 Argentina</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇯🇴 Jordania</span></div><span class="m-group">Kansas City</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🇩🇿 Argelia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇦🇹 Austria</span></div><span class="m-group">Dallas</span></div>
+
+  <div class="slabel">Grupo K</div>
+  <div class="match"><span class="m-status s-soon">17 Jun</span><div class="m-teams"><span class="m-team right">🇵🇹 Portugal</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇩 RD Congo</span></div><span class="m-group">Houston</span></div>
+  <div class="match"><span class="m-status s-soon">17 Jun</span><div class="m-teams"><span class="m-team right">🇺🇿 Uzbekistán</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇴 Colombia</span></div><span class="m-group">CDMX</span></div>
+  <div class="match"><span class="m-status s-soon">23 Jun</span><div class="m-teams"><span class="m-team right">🇵🇹 Portugal</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇿 Uzbekistán</span></div><span class="m-group">Houston</span></div>
+  <div class="match"><span class="m-status s-soon">23 Jun</span><div class="m-teams"><span class="m-team right">🇨🇩 RD Congo</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇴 Colombia</span></div><span class="m-group">Atlanta</span></div>
+  <div class="match"><span class="m-status s-soon">28 Jun</span><div class="m-teams"><span class="m-team right">🇵🇹 Portugal</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇨🇴 Colombia</span></div><span class="m-group">Miami</span></div>
+  <div class="match"><span class="m-status s-soon">28 Jun</span><div class="m-teams"><span class="m-team right">🇨🇩 RD Congo</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇺🇿 Uzbekistán</span></div><span class="m-group">Atlanta</span></div>
+
+  <div class="slabel">Grupo L</div>
+  <div class="match"><span class="m-status s-soon">17 Jun</span><div class="m-teams"><span class="m-team right">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇭🇷 Croacia</span></div><span class="m-group">Dallas</span></div>
+  <div class="match"><span class="m-status s-soon">17 Jun</span><div class="m-teams"><span class="m-team right">🇬🇭 Ghana</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇵🇦 Panamá</span></div><span class="m-group">Toronto</span></div>
+  <div class="match"><span class="m-status s-soon">23 Jun</span><div class="m-teams"><span class="m-team right">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇬🇭 Ghana</span></div><span class="m-group">Boston</span></div>
+  <div class="match"><span class="m-status s-soon">23 Jun</span><div class="m-teams"><span class="m-team right">🇭🇷 Croacia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇵🇦 Panamá</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇵🇦 Panamá</span></div><span class="m-group">NY/NJ</span></div>
+  <div class="match"><span class="m-status s-soon">27 Jun</span><div class="m-teams"><span class="m-team right">🇭🇷 Croacia</span><div class="m-score"><span class="sc">·</span><span class="sep">vs</span><span class="sc">·</span></div><span class="m-team">🇬🇭 Ghana</span></div><span class="m-group">Boston</span></div>
+
+  <div class="slabel">⚡ Fase eliminatoria — a completar</div>
+  <div class="match"><span class="m-status s-soon">28 Jun–3 Jul</span><div class="m-teams"><span class="m-team right" style="color:#4a6a8a">16avos</span><div class="m-score"><span class="sc" style="color:#3a5a7a">?</span><span class="sep">vs</span><span class="sc" style="color:#3a5a7a">?</span></div><span class="m-team" style="color:#4a6a8a">× 16 partidos</span></div><span class="m-group"></span></div>
+  <div class="match"><span class="m-status s-soon">4–7 Jul</span><div class="m-teams"><span class="m-team right" style="color:#4a6a8a">Octavos</span><div class="m-score"><span class="sc" style="color:#3a5a7a">?</span><span class="sep">vs</span><span class="sc" style="color:#3a5a7a">?</span></div><span class="m-team" style="color:#4a6a8a">× 8 partidos</span></div><span class="m-group"></span></div>
+  <div class="match"><span class="m-status s-soon">9–11 Jul</span><div class="m-teams"><span class="m-team right" style="color:#4a6a8a">Cuartos</span><div class="m-score"><span class="sc" style="color:#3a5a7a">?</span><span class="sep">vs</span><span class="sc" style="color:#3a5a7a">?</span></div><span class="m-team" style="color:#4a6a8a">× 4 partidos</span></div><span class="m-group"></span></div>
+  <div class="match"><span class="m-status s-soon">14–15 Jul</span><div class="m-teams"><span class="m-team right" style="color:#4a6a8a">Semis</span><div class="m-score"><span class="sc" style="color:#3a5a7a">?</span><span class="sep">vs</span><span class="sc" style="color:#3a5a7a">?</span></div><span class="m-team" style="color:#4a6a8a">× 2 partidos</span></div><span class="m-group"></span></div>
+  <div class="match live"><span class="m-status s-live">🏆 FINAL</span><div class="m-teams"><span class="m-team right" style="color:#c9a227">???</span><div class="m-score"><span class="sc">?</span><span class="sep">vs</span><span class="sc">?</span></div><span class="m-team" style="color:#c9a227">???</span></div><span class="m-group">19 Jul</span></div>
+
+</div>
+
+<!-- ======= GRUPOS ======= -->
+<div id="grupos" class="page">
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+
+    <div class="group-block">
+      <div class="group-header">GRUPO A</div>
+      <div class="group-team"><span class="gt-flag">🇲🇽</span><span class="gt-name">México</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇰🇷</span><span class="gt-name">Corea del Sur</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇿🇦</span><span class="gt-name">Sudáfrica</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇿</span><span class="gt-name">Rep. Checa</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO B</div>
+      <div class="group-team"><span class="gt-flag">🇨🇦</span><span class="gt-name">Canadá</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇭</span><span class="gt-name">Suiza</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇶🇦</span><span class="gt-name">Qatar</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇧🇦</span><span class="gt-name">Bosnia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO C</div>
+      <div class="group-team"><span class="gt-flag">🇧🇷</span><span class="gt-name">Brasil</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇲🇦</span><span class="gt-name">Marruecos</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🏴󠁧󠁢󠁳󠁣󠁴󠁿</span><span class="gt-name">Escocia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇭🇹</span><span class="gt-name">Haití</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO D</div>
+      <div class="group-team"><span class="gt-flag">🇺🇸</span><span class="gt-name">EE.UU.</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇵🇾</span><span class="gt-name">Paraguay</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇦🇺</span><span class="gt-name">Australia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇹🇷</span><span class="gt-name">Turquía</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO E</div>
+      <div class="group-team"><span class="gt-flag">🇩🇪</span><span class="gt-name">Alemania</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇼</span><span class="gt-name">Curazao</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇪🇨</span><span class="gt-name">Ecuador</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇮</span><span class="gt-name">Costa de Marfil</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO F</div>
+      <div class="group-team"><span class="gt-flag">🇳🇱</span><span class="gt-name">Países Bajos</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇯🇵</span><span class="gt-name">Japón</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇹🇳</span><span class="gt-name">Túnez</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇸🇪</span><span class="gt-name">Suecia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO G</div>
+      <div class="group-team"><span class="gt-flag">🇧🇪</span><span class="gt-name">Bélgica</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇪🇬</span><span class="gt-name">Egipto</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇮🇷</span><span class="gt-name">Irán</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇳🇿</span><span class="gt-name">Nueva Zelanda</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block" style="border-color:#c9a227">
+      <div class="group-header" style="background:#1a3a0a;color:#c9a227">GRUPO H ⭐</div>
+      <div class="group-team"><span class="gt-flag">🇪🇸</span><span class="gt-name">España</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇻</span><span class="gt-name">Cabo Verde</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇸🇦</span><span class="gt-name">Arabia Saudí</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇺🇾</span><span class="gt-name">Uruguay</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO I</div>
+      <div class="group-team"><span class="gt-flag">🇫🇷</span><span class="gt-name">Francia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇸🇳</span><span class="gt-name">Senegal</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇮🇶</span><span class="gt-name">Irak</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇳🇴</span><span class="gt-name">Noruega</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO J</div>
+      <div class="group-team"><span class="gt-flag">🇦🇷</span><span class="gt-name">Argentina</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇩🇿</span><span class="gt-name">Argelia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇦🇹</span><span class="gt-name">Austria</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇯🇴</span><span class="gt-name">Jordania</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO K</div>
+      <div class="group-team"><span class="gt-flag">🇵🇹</span><span class="gt-name">Portugal</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇩</span><span class="gt-name">RD Congo</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇺🇿</span><span class="gt-name">Uzbekistán</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇨🇴</span><span class="gt-name">Colombia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+    <div class="group-block">
+      <div class="group-header">GRUPO L</div>
+      <div class="group-team"><span class="gt-flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><span class="gt-name">Inglaterra</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇭🇷</span><span class="gt-name">Croacia</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇬🇭</span><span class="gt-name">Ghana</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+      <div class="group-team"><span class="gt-flag">🇵🇦</span><span class="gt-name">Panamá</span><span class="gt-stats">0J 0G 0E 0P</span><span class="gt-pts">0</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======= RANKING ======= -->
+<div id="ranking" class="page">
+
+  <table class="ranking">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Participante</th>
+        <th style="text-align:center">Aciertos</th>
+        <th style="text-align:right">Pts</th>
+      </tr>
+    </thead>
+    <tbody id="rankBody"></tbody>
+  </table>
+
+  <div class="note">
+    📋 <strong>Actualizar ranking:</strong> edita el array <code>players</code> al principio del script con los puntos reales de cada uno. Próximamente se conectará a Google Drive.
+  </div>
+</div>
 
 <script>
-
-//////////////////////////////
-// 🔴 LIVE (TheSportsDB)
-//////////////////////////////
-async function loadLive() {
-  const box = document.getElementById("live");
-
-  try {
-    const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/livescore.php?s=Soccer");
-    const data = await res.json();
-
-    box.innerHTML = "";
-
-    if (!data.events) {
-      box.innerHTML = "<p>No hay partidos en directo.</p>";
-      return;
-    }
-
-    data.events.slice(0, 5).forEach(m => {
-      const card = document.createElement("div");
-      card.className = "card live";
-
-      card.innerHTML = `
-        <div class="teams">
-          <span>${m.strHomeTeam}</span>
-          <strong>${m.intHomeScore ?? 0} - ${m.intAwayScore ?? 0}</strong>
-          <span>${m.strAwayTeam}</span>
-        </div>
-      `;
-
-      box.appendChild(card);
-    });
-
-  } catch (e) {
-    box.innerHTML = "<p>Error cargando directo</p>";
-  }
+// ── TAB NAVIGATION ─────────────────────────────────────
+function show(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
 }
 
-//////////////////////////////
-// 📅 UPCOMING (TheSportsDB)
-//////////////////////////////
-async function loadUpcoming() {
-  const box = document.getElementById("upcoming");
+// ── RANKING DATA ────────────────────────────────────────
+// Editar aquí los puntos cuando quieras actualizar
+const players = [
+  { name: 'Soler',       pts: 0, aciertos: 0 },
+  { name: 'Mairal',      pts: 0, aciertos: 0 },
+  { name: 'Iñigo Zalba', pts: 0, aciertos: 0 },
+  { name: 'Zalba Junior',pts: 0, aciertos: 0 },
+  { name: 'Alex Zalba',  pts: 0, aciertos: 0 },
+  { name: 'Giacchi',     pts: 0, aciertos: 0 },
+  { name: 'Ander',       pts: 0, aciertos: 0 },
+  { name: 'Muskiz',      pts: 0, aciertos: 0 },
+  { name: 'Landa',       pts: 0, aciertos: 0 },
+  { name: 'Diego',       pts: 0, aciertos: 0 },
+  { name: 'Liza',        pts: 0, aciertos: 0 },
+  { name: 'Sanpe',       pts: 0, aciertos: 0 },
+  { name: 'Olague',      pts: 0, aciertos: 0 },
+  { name: 'Iker',        pts: 0, aciertos: 0 },
+  { name: 'Berjano',     pts: 0, aciertos: 0 },
+];
 
-  try {
-    const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=4328");
-    const data = await res.json();
+const medals = ['🥇','🥈','🥉'];
 
-    box.innerHTML = "";
-
-    if (!data.events) {
-      box.innerHTML = "<p>No hay próximos partidos.</p>";
-      return;
-    }
-
-    data.events.slice(0, 8).forEach(m => {
-      const card = document.createElement("div");
-      card.className = "card future";
-
-      card.innerHTML = `
-        <div class="teams">
-          <span>${m.strHomeTeam}</span>
-          <strong>VS</strong>
-          <span>${m.strAwayTeam}</span>
-        </div>
-        <div class="status">📅 ${m.dateEvent}</div>
-      `;
-
-      box.appendChild(card);
-    });
-
-  } catch (e) {
-    box.innerHTML = "<p>Error cargando próximos partidos</p>";
-  }
+function renderRanking() {
+  const sorted = [...players].sort((a,b) => b.pts - a.pts || b.aciertos - a.aciertos);
+  const tbody = document.getElementById('rankBody');
+  tbody.innerHTML = sorted.map((p, i) => {
+    const pos = i + 1;
+    const isTop = pos <= 3;
+    return `<tr>
+      <td class="r-pos${isTop?' top3':''}">${medals[i] || pos}</td>
+      <td class="r-name">${p.name}</td>
+      <td class="r-aciertos">${p.aciertos}</td>
+      <td class="r-pts">${p.pts} <span style="font-size:.65rem;color:#4a6a8a">pts</span></td>
+    </tr>`;
+  }).join('');
 }
 
-//////////////////////////////
-// 🏁 RESULTS (OpenLigaDB fallback)
-//////////////////////////////
-async function loadResults() {
-  const box = document.getElementById("results");
-
-  try {
-    const res = await fetch("https://api.openligadb.de/getmatchdata/bl1/2024");
-    const data = await res.json();
-
-    box.innerHTML = "";
-
-    data.slice(0, 10).forEach(m => {
-      const home = m.team1.teamName;
-      const away = m.team2.teamName;
-
-      const card = document.createElement("div");
-      card.className = "card";
-
-      card.innerHTML = `
-        <div class="teams">
-          <span>${home}</span>
-          <strong>${m.matchResults?.[0]?.pointsTeam1 ?? 0} - ${m.matchResults?.[0]?.pointsTeam2 ?? 0}</strong>
-          <span>${away}</span>
-        </div>
-        <div class="status">🏁 Finalizado</div>
-      `;
-
-      box.appendChild(card);
-    });
-
-  } catch (e) {
-    box.innerHTML = "<p>Error cargando resultados</p>";
-  }
-}
-
-loadLive();
-loadUpcoming();
-loadResults();
-
-setInterval(loadLive, 60000);
-
+renderRanking();
 </script>
-
 </body>
 </html>
