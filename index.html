@@ -2,105 +2,121 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Mundial en Directo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mundial Live Pro</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <header>
-    <h1>⚽ Mundial 2026</h1>
-    <p>Resultados en directo + próximos partidos</p>
-  </header>
 
-  <main>
+<header>
+  <h1>⚽ Mundial Live Pro</h1>
+  <p>Resultados oficiales en tiempo real</p>
+</header>
 
-    <section>
-      <h2>🔴 Partidos en directo</h2>
-      <div id="live">Cargando...</div>
-    </section>
+<main>
 
-    <section>
-      <h2>📅 Próximos partidos</h2>
-      <div id="upcoming"></div>
-    </section>
+  <section>
+    <h2>🔴 En directo</h2>
+    <div id="live" class="grid"></div>
+  </section>
 
-  </main>
+  <section>
+    <h2>📅 Próximos partidos</h2>
+    <div id="upcoming" class="grid"></div>
+  </section>
 
-  <script>
-    // =========================
-    // PARTIDOS EN DIRECTO
-    // =========================
-    async function loadLive() {
-      const container = document.getElementById("live");
+</main>
 
-      try {
-        const res = await fetch("https://www.thesportsdb.com/api/v1/json/3/livescore.php?s=Soccer");
-        const data = await res.json();
+<script>
 
-        container.innerHTML = "";
+const API_KEY = "TU_API_KEY"; // 👈 pon tu clave aquí
 
-        if (!data.events) {
-          container.innerHTML = "<p>No hay partidos en directo ahora mismo.</p>";
-          return;
-        }
+// ================= LIVE =================
+async function loadLive() {
+  const box = document.getElementById("live");
 
-        data.events.slice(0, 5).forEach(match => {
-          const div = document.createElement("div");
-          div.className = "card";
-
-          div.innerHTML = `
-            <strong>${match.strHomeTeam}</strong>
-            <span>${match.intHomeScore} - ${match.intAwayScore}</span>
-            <strong>${match.strAwayTeam}</strong>
-            <p>Minuto: ${match.strProgress || "?"}</p>
-          `;
-
-          container.appendChild(div);
-        });
-
-      } catch (e) {
-        container.innerHTML = "<p>Error cargando datos en vivo</p>";
+  try {
+    const res = await fetch("https://v3.football.api-sports.io/fixtures?live=all", {
+      headers: {
+        "x-apisports-key": API_KEY
       }
+    });
+
+    const data = await res.json();
+
+    box.innerHTML = "";
+
+    if (!data.response.length) {
+      box.innerHTML = "<p>No hay partidos en directo ahora mismo.</p>";
+      return;
     }
 
-    // =========================
-    // PARTIDOS FUTUROS (WORLD CUP)
-    // =========================
-    function loadUpcoming() {
+    data.response.forEach(m => {
+      const card = document.createElement("div");
+      card.className = "card live";
 
-      const matches = [
-        { home: "México", away: "Sudáfrica", date: "11 Junio 2026" },
-        { home: "Canadá", away: "Bosnia", date: "12 Junio 2026" },
-        { home: "USA", away: "Paraguay", date: "12 Junio 2026" },
-        { home: "Brasil", away: "Marruecos", date: "13 Junio 2026" },
-        { home: "Francia", away: "Senegal", date: "15 Junio 2026" },
-        { home: "Argentina", away: "Argelia", date: "16 Junio 2026" },
-        { home: "España", away: "Uruguay", date: "17 Junio 2026" }
-      ];
+      card.innerHTML = `
+        <div class="teams">
+          <span>${m.teams.home.name}</span>
+          <strong>${m.goals.home ?? 0} - ${m.goals.away ?? 0}</strong>
+          <span>${m.teams.away.name}</span>
+        </div>
+        <div class="status">🔴 ${m.fixture.status.long}</div>
+      `;
 
-      const container = document.getElementById("upcoming");
-      container.innerHTML = "";
+      box.appendChild(card);
+    });
 
-      matches.forEach(m => {
-        const div = document.createElement("div");
-        div.className = "card future";
+  } catch (e) {
+    box.innerHTML = "<p>Error cargando datos en vivo</p>";
+  }
+}
 
-        div.innerHTML = `
-          <strong>${m.home}</strong>
-          <span>VS</span>
-          <strong>${m.away}</strong>
-          <p>📅 ${m.date}</p>
-        `;
+// ================= UPCOMING =================
+async function loadUpcoming() {
+  const box = document.getElementById("upcoming");
 
-        container.appendChild(div);
-      });
-    }
+  try {
+    const res = await fetch("https://v3.football.api-sports.io/fixtures?next=10", {
+      headers: {
+        "x-apisports-key": API_KEY
+      }
+    });
 
-    loadLive();
-    loadUpcoming();
+    const data = await res.json();
 
-    setInterval(loadLive, 60000);
-  </script>
+    box.innerHTML = "";
+
+    data.response.forEach(m => {
+      const date = new Date(m.fixture.date).toLocaleString("es-ES");
+
+      const card = document.createElement("div");
+      card.className = "card future";
+
+      card.innerHTML = `
+        <div class="teams">
+          <span>${m.teams.home.name}</span>
+          <strong>VS</strong>
+          <span>${m.teams.away.name}</span>
+        </div>
+        <div class="status">📅 ${date}</div>
+      `;
+
+      box.appendChild(card);
+    });
+
+  } catch (e) {
+    box.innerHTML = "<p>Error cargando próximos partidos</p>";
+  }
+}
+
+loadLive();
+loadUpcoming();
+
+setInterval(loadLive, 60000);
+
+</script>
 
 </body>
 </html>
