@@ -327,7 +327,7 @@ const BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 
 async function fetchScores(){
   try{
-    const r=await fetch(BASE+'/scoreboard',{cache:'no-store'});
+    const r=await fetch(BASE+'/scoreboard?dates=20260611-20260719&limit=200',{cache:'no-store'});
     if(!r.ok)throw 0;
     const d=await r.json();
     const map={};
