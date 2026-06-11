@@ -342,9 +342,16 @@ async function fetchScores(){
         hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
     });
     LIVE=MATCHES.map(m=>{
-      const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
-      if(map[k1])return map[k1];
-      if(map[k2]){const x=map[k2];return{status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
+    const newLive=MATCHES.map(m=>{
+      const k1=norm(m.eh)+'|'+norm(m.ea);
+      const k2=norm(m.ea)+'|'+norm(m.eh);
+
+      if(map[k1]) return map[k1];
+      if(map[k2]){
+        const x=map[k2];
+        return {status:x.status,hs:x.as,as:x.hs,clock:x.clock};
+      }
+
       return null;
     });
     document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
