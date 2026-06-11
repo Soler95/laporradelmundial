@@ -7,53 +7,51 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0a1628;color:#e8edf5;min-height:100vh}
-header{background:#0e2040;border-bottom:2px solid #c9a227;padding:1rem 1.25rem;display:flex;align-items:center;justify-content:space-between}
-header h1{font-size:1.15rem;font-weight:700;color:#fff}
-header p{font-size:.72rem;color:#8faabf;margin-top:2px}
-#sync{font-size:.65rem;color:#4a6a8a;margin-top:2px}
-nav{display:flex;background:#0e2040;border-bottom:1px solid #1e3a5a}
-nav button{flex:1;padding:.7rem .5rem;background:none;border:none;color:#6a8faa;font-size:.82rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+header{background:#0e2040;border-bottom:2px solid #c9a227;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:1.1rem;font-weight:700;color:#fff}
+header p{font-size:.7rem;color:#8faabf;margin-top:2px}
+#sync{font-size:.62rem;color:#4a6a8a;margin-top:2px}
+nav{display:flex;background:#0e2040;border-bottom:1px solid #1e3a5a;overflow-x:auto}
+nav button{flex:1;padding:.65rem .4rem;background:none;border:none;color:#6a8faa;font-size:.78rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
 nav button.active{color:#c9a227;border-bottom-color:#c9a227}
-.page{display:none;padding:.75rem}
+.page{display:none;padding:.7rem}
 .page.active{display:block}
 .slabel{font-size:.62rem;font-weight:700;letter-spacing:.1em;color:#8faabf;text-transform:uppercase;margin:1rem 0 .35rem;padding-left:2px}
 .slabel:first-child{margin-top:0}
-.match{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;padding:.55rem .75rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.5rem}
+.match{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;padding:.5rem .7rem;margin-bottom:.3rem;display:flex;align-items:center;gap:.45rem}
 .match.live{border-color:#c9a227;background:#111e38}
-.m-status{font-size:.6rem;font-weight:700;min-width:46px;text-align:center;line-height:1.3}
-.s-live{color:#f5c518}
-.s-done{color:#4caf50}
-.s-soon{color:#4a6a8a}
-.m-teams{flex:1;display:flex;align-items:center;gap:.35rem;justify-content:center}
-.m-team{font-size:.78rem;font-weight:500;min-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m-status{font-size:.58rem;font-weight:700;min-width:44px;text-align:center;line-height:1.3}
+.s-live{color:#f5c518}.s-done{color:#4caf50}.s-soon{color:#4a6a8a}
+.m-teams{flex:1;display:flex;align-items:center;gap:.3rem;justify-content:center}
+.m-team{font-size:.75rem;font-weight:500;min-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .m-team.right{text-align:right}
 .m-score{display:flex;align-items:center;gap:3px;flex-shrink:0}
-.sc{background:#152d4a;border:1px solid #1e3a5a;border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;transition:.3s}
+.sc{background:#152d4a;border:1px solid #1e3a5a;border-radius:4px;width:23px;height:23px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700}
 .sc.updated{background:#1a3a1a;border-color:#4caf50}
-.sep{font-size:.65rem;color:#3a5a7a}
-.m-info{font-size:.58rem;color:#3a5a7a;white-space:nowrap;min-width:30px;text-align:right}
-.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-.group-block{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;overflow:hidden}
-.group-block.esp{border-color:#c9a227}
-.gh{background:#152d4a;padding:.45rem .75rem;font-size:.7rem;font-weight:700;color:#c9a227;letter-spacing:.05em}
-.group-block.esp .gh{background:#1a3a0a}
-.gt{display:flex;align-items:center;gap:.4rem;padding:.38rem .75rem;border-top:1px solid #1e3a5a;font-size:.75rem}
-.gt:first-of-type{border-top:none}
-.gf{font-size:.9rem}
-.gn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.7rem}
-.gpts{font-weight:700;color:#c9a227;min-width:18px;text-align:right;font-size:.72rem}
-.gst{font-size:.58rem;color:#3a5a7a;min-width:60px;text-align:right}
-table.rank{width:100%;border-collapse:collapse;font-size:.82rem}
-table.rank th{font-size:.6rem;font-weight:600;color:#6a8faa;text-transform:uppercase;letter-spacing:.06em;padding:.4rem .5rem;text-align:left;border-bottom:1px solid #1e3a5a}
-table.rank td{padding:.42rem .5rem;border-bottom:1px solid #0e2040}
-table.rank tr:hover td{background:#0e2040}
-.rpos{font-weight:700;color:#c9a227;width:26px}
-.rpos.top{color:#f5c518}
+.sep{font-size:.62rem;color:#3a5a7a}
+table.rank{width:100%;border-collapse:collapse;font-size:.8rem}
+table.rank th{font-size:.58rem;font-weight:600;color:#6a8faa;text-transform:uppercase;letter-spacing:.05em;padding:.38rem .45rem;text-align:left;border-bottom:1px solid #1e3a5a}
+table.rank td{padding:.4rem .45rem;border-bottom:1px solid #0e2040}
+.rpos{font-weight:700;color:#c9a227;width:24px}
 .rnm{font-weight:500}
 .rpt{font-weight:700;text-align:right}
-.rac{color:#6a8faa;text-align:center}
-.note{font-size:.7rem;color:#4a6a8a;margin-top:.75rem;padding:.6rem .75rem;background:#0e2040;border-radius:6px;border-left:3px solid #1e3a5a;line-height:1.5}
-.chip{display:inline-block;background:#152d4a;border:1px solid #1e3a5a;border-radius:4px;padding:2px 6px;font-size:.6rem;color:#8faabf;margin-left:4px;vertical-align:middle}
+.rc{color:#6a8faa;text-align:center;font-size:.72rem}
+/* predictions grid */
+.pmatch{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;margin-bottom:.45rem;overflow:hidden}
+.pmatch.done{border-color:#2a4a2a}
+.pmh{display:flex;align-items:center;gap:.4rem;padding:.45rem .7rem;background:#152d4a;font-size:.74rem;font-weight:600}
+.pmh .res{margin-left:auto;font-weight:700;color:#c9a227;font-size:.8rem}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#1e3a5a}
+.pcell{background:#0e2040;padding:.3rem .25rem;text-align:center}
+.pcell .pn{font-size:.55rem;color:#6a8faa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcell .pv{font-size:.68rem;font-weight:700;margin-top:1px}
+.pcell.hit4{background:#143a14}.pcell.hit4 .pv{color:#6fdc6f}
+.pcell.hit1{background:#3a3210}.pcell.hit1 .pv{color:#e8c84a}
+.pcell.miss{background:#2a1212}.pcell.miss .pv{color:#b05858}
+.note{font-size:.68rem;color:#4a6a8a;margin-top:.7rem;padding:.55rem .7rem;background:#0e2040;border-radius:6px;border-left:3px solid #1e3a5a;line-height:1.5}
+.legend{display:flex;gap:.7rem;font-size:.62rem;color:#8faabf;margin-bottom:.6rem;flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:4px}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block}
 </style>
 </head>
 <body>
@@ -61,46 +59,44 @@ table.rank tr:hover td{background:#0e2040}
 <header>
   <div>
     <h1>&#9917; Mundial 2026</h1>
-    <p>USA · Mexico · Canada &nbsp;&mdash;&nbsp; 11 Jun &rarr; 19 Jul</p>
-    <div id="sync">Esperando datos...</div>
+    <p>USA · Mexico · Canada — 11 Jun &rarr; 19 Jul · 15 quinielistas</p>
+    <div id="sync">Cargando...</div>
   </div>
-  <div style="text-align:right">
-    <div style="font-size:.65rem;color:#4a6a8a">Auto-actualiza</div>
-    <div style="font-size:.65rem;color:#4a6a8a">cada 60 seg</div>
-  </div>
+  <div style="text-align:right;font-size:.62rem;color:#4a6a8a">Auto-actualiza<br>cada 60 seg</div>
 </header>
 
 <nav>
   <button class="active" onclick="show('partidos',this)">Partidos</button>
-  <button onclick="show('grupos',this)">Grupos</button>
-  <button onclick="show('ranking',this)">Ranking</button>
+  <button onclick="show('pronos',this)">Pronosticos</button>
+  <button onclick="show('ranking',this)">&#127942; Ranking</button>
 </nav>
 
-<!-- PARTIDOS -->
 <div id="partidos" class="page active">
   <div id="matchList"></div>
   <div id="scorers"></div>
 </div>
 
-<!-- GRUPOS -->
-<div id="grupos" class="page">
-<div class="group-grid" id="groupGrid"></div>
+<div id="pronos" class="page">
+  <div class="legend">
+    <span><span class="dot" style="background:#143a14;border:1px solid #6fdc6f"></span> Exacto (4 pts)</span>
+    <span><span class="dot" style="background:#3a3210;border:1px solid #e8c84a"></span> Signo (1 pt)</span>
+    <span><span class="dot" style="background:#2a1212;border:1px solid #b05858"></span> Fallo (0)</span>
+  </div>
+  <div id="predList"></div>
 </div>
 
-<!-- RANKING -->
 <div id="ranking" class="page">
   <table class="rank">
-    <thead><tr><th>#</th><th>Participante</th><th style="text-align:center">Aciertos</th><th style="text-align:right">Pts</th></tr></thead>
+    <thead><tr><th>#</th><th>Quinielista</th><th style="text-align:center">Exactos</th><th style="text-align:center">Signos</th><th style="text-align:right">Pts</th></tr></thead>
     <tbody id="rankBody"></tbody>
   </table>
-  <div class="note">
-    Edita el array <code>players</code> en el script para actualizar puntos.<br>
-    Proximamente: conexion automatica con Google Drive.
-  </div>
+  <div class="note">Puntuacion: signo 1X2 acertado = 1 pt · resultado exacto = +3 pts (max 4 por partido).<br>Se recalcula automaticamente con los resultados reales.</div>
 </div>
 
 <script>
-// ── TABS ──────────────────────────────────────────────
+const PLAYERS=["Iñigo Z", "Berjano", "Ander", "Soler", "Olague", "Giacchi", "Iker", "Muskiz", "M. Zalba", "Liza", "Diego", "Sanpe", "Alex", "Asier", "Landa"];
+const MATCHES=[{"g": "A", "code": "A1", "d": "11 Jun", "home": "México", "away": "Sudáfrica", "hf": "🇲🇽", "af": "🇿🇦", "eh": "Mexico", "ea": "South Africa", "preds": ["1|2-1", "1|2-0", "X|1-1", "1|2-0", "1|1-0", "1|2-0", "1|1-0", "1|2-0", "1|3-1", "X|1-1", "1|3-1", "1|2-1", "1|2-0", "1|2-0", "2|1-2"]}, {"g": "A", "code": "A1", "d": "11 Jun", "home": "Corea del Sur", "away": "República Checa", "hf": "🇰🇷", "af": "🇨🇿", "eh": "South Korea", "ea": "Czech Republic", "preds": ["2|1-2", "1|2-0", "1|1-0", "2|1-2", "X|1-1", "1|1-0", "X|0-0", "X|1-1", "2|1-2", "1|2-1", "X|1-1", "1|2-0", "2|0-1", "X|1-1", "X|1-1"]}, {"g": "A", "code": "A2", "d": "18 Jun", "home": "República Checa", "away": "Sudáfrica", "hf": "🇨🇿", "af": "🇿🇦", "eh": "Czech Republic", "ea": "South Africa", "preds": ["1|1-0", "1|2-1", "2|0-1", "1|3-0", "1|1-0", "2|0-1", "1|2-1", "1|2-0", "1|2-1", "X|1-1", "1|2-1", "X|1-1", "1|3-0", "1|1-0", "1|2-1"]}, {"g": "A", "code": "A2", "d": "18 Jun", "home": "México", "away": "Corea del Sur", "hf": "🇲🇽", "af": "🇰🇷", "eh": "Mexico", "ea": "South Korea", "preds": ["1|2-1", "X|1-1", "X|1-1", "1|2-1", "1|2-1", "1|1-0", "X|1-1", "X|1-1", "1|3-2", "2|1-2", "X|1-1", "2|0-1", "1|3-1", "2|1-2", "1|1-0"]}, {"g": "A", "code": "A3", "d": "24 Jun", "home": "República Checa", "away": "México", "hf": "🇨🇿", "af": "🇲🇽", "eh": "Czech Republic", "ea": "Mexico", "preds": ["2|0-1", "2|0-1", "2|0-2", "X|1-1", "2|1-2", "2|0-1", "2|0-1", "2|1-2", "2|1-2", "2|0-1", "X|0-0", "X|0-0", "X|2-2", "2|1-2", "2|1-2"]}, {"g": "A", "code": "A3", "d": "24 Jun", "home": "Sudáfrica", "away": "Corea del Sur", "hf": "🇿🇦", "af": "🇰🇷", "eh": "South Africa", "ea": "South Korea", "preds": ["2|0-2", "2|0-2", "2|0-1", "2|0-1", "2|1-2", "2|0-1", "X|1-1", "2|0-2", "X|1-1", "2|1-2", "1|2-0", "2|0-1", "2|1-2", "2|0-3", "2|1-2"]}, {"g": "B", "code": "B1", "d": "12 Jun", "home": "Canadá", "away": "Bosnia y Herzegovina", "hf": "🇨🇦", "af": "🇧🇦", "eh": "Canada", "ea": "Bosnia and Herzegovina", "preds": ["1|2-0", "1|3-1", "X|2-2", "1|2-0", "1|1-0", "1|1-0", "2|1-2", "1|2-1", "1|2-0", "2|1-2", "1|1-0", "X|1-1", "1|1-0", "X|0-0", "1|2-1"]}, {"g": "B", "code": "B1", "d": "13 Jun", "home": "Catar", "away": "Suiza", "hf": "🇶🇦", "af": "🇨🇭", "eh": "Qatar", "ea": "Switzerland", "preds": ["2|0-2", "2|0-2", "2|0-1", "2|0-2", "2|0-2", "2|0-1", "2|0-2", "2|0-2", "1|1-0", "2|1-2", "2|0-2", "2|0-2", "2|0-3", "2|1-3", "2|0-3"]}, {"g": "B", "code": "B2", "d": "18 Jun", "home": "Suiza", "away": "Bosnia y Herzegovina", "hf": "🇨🇭", "af": "🇧🇦", "eh": "Switzerland", "ea": "Bosnia and Herzegovina", "preds": ["1|3-0", "1|1-0", "1|2-1", "1|2-1", "1|2-1", "1|1-0", "1|1-0", "1|2-1", "2|0-1", "1|2-0", "X|1-1", "1|2-1", "1|2-1", "1|1-0", "1|2-0"]}, {"g": "B", "code": "B2", "d": "18 Jun", "home": "Canadá", "away": "Catar", "hf": "🇨🇦", "af": "🇶🇦", "eh": "Canada", "ea": "Qatar", "preds": ["1|2-1", "1|2-1", "1|2-0", "1|3-0", "1|2-0", "X|0-0", "X|1-1", "1|2-1", "1|3-1", "X|1-1", "X|0-0", "1|1-0", "1|1-0", "X|2-2", "1|3-1"]}, {"g": "B", "code": "B3", "d": "24 Jun", "home": "Suiza", "away": "Canadá", "hf": "🇨🇭", "af": "🇨🇦", "eh": "Switzerland", "ea": "Canada", "preds": ["1|2-0", "X|0-0", "1|1-0", "1|2-1", "X|1-1", "1|1-0", "1|2-0", "X|1-1", "X|1-1", "1|1-0", "1|2-1", "1|1-0", "1|3-1", "X|1-1", "X|2-2"]}, {"g": "B", "code": "B3", "d": "24 Jun", "home": "Bosnia y Herzegovina", "away": "Catar", "hf": "🇧🇦", "af": "🇶🇦", "eh": "Bosnia and Herzegovina", "ea": "Qatar", "preds": ["X|1-1", "1|2-0", "1|1-0", "1|2-0", "1|1-0", "1|1-0", "1|2-1", "X|1-1", "2|0-1", "X|1-1", "1|1-0", "1|2-1", "X|0-0", "1|2-0", "1|2-0"]}, {"g": "C", "code": "C1", "d": "13 Jun", "home": "Brasil", "away": "Marruecos", "hf": "🇧🇷", "af": "🇲🇦", "eh": "Brazil", "ea": "Morocco", "preds": ["1|3-1", "X|1-1", "1|1-0", "1|2-1", "1|2-1", "2|0-1", "X|1-1", "1|2-1", "1|3-1", "X|2-2", "1|2-0", "1|2-1", "X|2-2", "X|1-1", "1|1-0"]}, {"g": "C", "code": "C1", "d": "13 Jun", "home": "Haití", "away": "Escocia", "hf": "🇭🇹", "af": "[SCO]", "eh": "Haiti", "ea": "Scotland", "preds": ["2|0-2", "2|1-2", "2|0-1", "2|0-3", "2|0-3", "2|0-1", "2|0-2", "2|0-2", "2|0-2", "2|0-1", "2|0-3", "2|0-2", "2|0-2", "2|1-4", "2|0-2"]}, {"g": "C", "code": "C2", "d": "19 Jun", "home": "Escocia", "away": "Marruecos", "hf": "[SCO]", "af": "🇲🇦", "eh": "Scotland", "ea": "Morocco", "preds": ["2|1-2", "2|0-1", "2|2-3", "2|1-2", "2|0-2", "2|0-1", "2|0-2", "X|1-1", "2|1-2", "2|1-3", "2|1-2", "2|1-2", "2|1-3", "2|0-2", "2|0-2"]}, {"g": "C", "code": "C2", "d": "19 Jun", "home": "Brasil", "away": "Haití", "hf": "🇧🇷", "af": "🇭🇹", "eh": "Brazil", "ea": "Haiti", "preds": ["1|4-0", "1|5-0", "1|4-0", "1|4-0", "1|7-0", "1|2-0", "1|5-0", "1|4-0", "1|5-1", "1|4-1", "1|5-0", "1|4-0", "1|4-0", "1|4-0", "1|4-0"]}, {"g": "C", "code": "C3", "d": "24 Jun", "home": "Escocia", "away": "Brasil", "hf": "[SCO]", "af": "🇧🇷", "eh": "Scotland", "ea": "Brazil", "preds": ["2|1-3", "2|0-2", "2|0-1", "2|1-3", "2|1-3", "2|0-1", "2|0-1", "2|0-2", "2|0-2", "2|1-2", "X|1-1", "2|1-3", "2|1-3", "2|1-3", "2|1-3"]}, {"g": "C", "code": "C3", "d": "24 Jun", "home": "Marruecos", "away": "Haití", "hf": "🇲🇦", "af": "🇭🇹", "eh": "Morocco", "ea": "Haiti", "preds": ["1|2-0", "1|4-0", "1|2-0", "1|4-0", "1|6-0", "1|2-0", "1|4-1", "1|2-0", "1|3-0", "1|3-1", "1|2-0", "1|2-0", "1|3-0", "1|2-0", "1|3-0"]}, {"g": "D", "code": "D1", "d": "12 Jun", "home": "Estados Unidos", "away": "Paraguay", "hf": "🇺🇸", "af": "🇵🇾", "eh": "USA", "ea": "Paraguay", "preds": ["1|1-0", "1|3-0", "1|1-0", "2|1-2", "1|2-1", "1|1-0", "X|0-0", "1|2-0", "1|2-1", "X|1-1", "1|2-1", "1|2-1", "X|1-1", "1|2-1", "1|2-1"]}, {"g": "D", "code": "D1", "d": "13 Jun", "home": "Australia", "away": "Turquía", "hf": "🇦🇺", "af": "🇹🇷", "eh": "Australia", "ea": "Turkey", "preds": ["X|2-2", "2|0-1", "2|0-2", "2|0-3", "2|0-1", "2|0-1", "2|0-2", "2|1-2", "2|1-3", "2|0-2", "2|0-2", "2|1-2", "2|1-3", "X|2-2", "2|0-2"]}, {"g": "D", "code": "D2", "d": "19 Jun", "home": "Estados Unidos", "away": "Australia", "hf": "🇺🇸", "af": "🇦🇺", "eh": "USA", "ea": "Australia", "preds": ["1|2-0", "X|0-0", "1|3-1", "1|2-0", "1|1-0", "1|1-0", "1|1-0", "1|2-1", "1|2-0", "1|1-0", "1|1-0", "1|1-0", "1|2-1", "2|1-2", "X|2-2"]}, {"g": "D", "code": "D2", "d": "19 Jun", "home": "Turquía", "away": "Paraguay", "hf": "🇹🇷", "af": "🇵🇾", "eh": "Turkey", "ea": "Paraguay", "preds": ["1|2-1", "X|0-0", "2|2-3", "1|2-1", "1|2-0", "1|1-0", "X|1-1", "X|1-1", "1|2-0", "1|2-1", "X|0-0", "1|1-0", "1|2-0", "X|1-1", "1|3-1"]}, {"g": "D", "code": "D3", "d": "25 Jun", "home": "Turquía", "away": "Estados Unidos", "hf": "🇹🇷", "af": "🇺🇸", "eh": "Turkey", "ea": "USA", "preds": ["1|3-2", "X|1-1", "2|1-2", "X|1-1", "X|1-1", "1|1-0", "1|2-1", "X|1-1", "1|2-0", "1|3-1", "1|1-0", "1|2-1", "1|2-1", "X|1-1", "1|2-1"]}, {"g": "D", "code": "D3", "d": "25 Jun", "home": "Paraguay", "away": "Australia", "hf": "🇵🇾", "af": "🇦🇺", "eh": "Paraguay", "ea": "Australia", "preds": ["2|0-1", "X|1-1", "1|3-1", "1|2-0", "X|1-1", "1|1-0", "1|3-1", "1|1-0", "1|2-1", "1|1-0", "1|2-0", "X|0-0", "1|3-1", "2|1-3", "2|0-1"]}, {"g": "E", "code": "E1", "d": "14 Jun", "home": "Alemania", "away": "Curazao", "hf": "🇩🇪", "af": "🇨🇼", "eh": "Germany", "ea": "Curacao", "preds": ["1|4-0", "1|5-0", "1|3-0", "1|5-0", "1|8-0", "1|3-0", "1|4-0", "1|3-0", "1|4-1", "1|4-1", "1|4-0", "1|4-0", "1|4-0", "1|3-1", "1|5-0"]}, {"g": "E", "code": "E1", "d": "14 Jun", "home": "Costa de Marfil", "away": "Ecuador", "hf": "🇨🇮", "af": "🇪🇨", "eh": "Ivory Coast", "ea": "Ecuador", "preds": ["2|1-2", "X|1-1", "2|1-3", "X|1-1", "X|1-1", "2|0-1", "X|1-1", "2|1-2", "1|2-1", "X|2-2", "1|1-0", "2|1-2", "2|1-2", "1|2-1", "2|0-1"]}, {"g": "E", "code": "E2", "d": "20 Jun", "home": "Alemania", "away": "Costa de Marfil", "hf": "🇩🇪", "af": "🇨🇮", "eh": "Germany", "ea": "Ivory Coast", "preds": ["1|2-1", "1|3-2", "X|2-2", "1|2-1", "1|3-1", "1|2-0", "1|2-1", "1|2-1", "1|3-0", "1|2-1", "X|1-1", "1|3-1", "1|2-1", "1|2-0", "1|3-1"]}, {"g": "E", "code": "E2", "d": "20 Jun", "home": "Ecuador", "away": "Curazao", "hf": "🇪🇨", "af": "🇨🇼", "eh": "Ecuador", "ea": "Curacao", "preds": ["1|3-0", "1|1-0", "1|3-0", "1|3-0", "1|4-0", "1|2-0", "1|3-0", "1|2-0", "1|2-1", "1|1-0", "1|2-0", "1|3-0", "1|3-0", "1|2-0", "1|2-0"]}, {"g": "E", "code": "E3", "d": "25 Jun", "home": "Curazao", "away": "Costa de Marfil", "hf": "🇨🇼", "af": "🇨🇮", "eh": "Curacao", "ea": "Ivory Coast", "preds": ["2|1-3", "2|0-3", "2|0-1", "2|0-2", "2|0-4", "2|0-1", "2|0-1", "2|0-2", "2|0-2", "2|1-2", "2|0-2", "2|0-1", "2|1-2", "2|1-3", "2|0-2"]}, {"g": "E", "code": "E3", "d": "25 Jun", "home": "Ecuador", "away": "Alemania", "hf": "🇪🇨", "af": "🇩🇪", "eh": "Ecuador", "ea": "Germany", "preds": ["2|2-3", "2|2-3", "2|1-3", "2|1-3", "2|0-2", "2|0-1", "X|0-0", "X|1-1", "2|0-2", "2|1-2", "X|1-1", "2|1-2", "2|2-3", "2|1-2", "2|0-2"]}, {"g": "F", "code": "F1", "d": "14 Jun", "home": "Países Bajos", "away": "Japón", "hf": "🇳🇱", "af": "🇯🇵", "eh": "Netherlands", "ea": "Japan", "preds": ["X|2-2", "2|1-3", "1|2-1", "1|2-0", "X|1-1", "1|1-0", "X|1-1", "X|2-2", "1|3-2", "1|2-1", "1|1-0", "1|2-1", "1|3-1", "1|3-2", "1|2-1"]}, {"g": "F", "code": "F1", "d": "14 Jun", "home": "Suecia", "away": "Túnez", "hf": "🇸🇪", "af": "🇹🇳", "eh": "Sweden", "ea": "Tunisia", "preds": ["1|1-0", "X|0-0", "1|1-0", "1|2-0", "1|2-0", "1|1-0", "X|1-1", "1|2-0", "1|2-0", "1|2-1", "1|2-1", "X|1-1", "1|2-0", "1|1-0", "1|2-1"]}, {"g": "F", "code": "F2", "d": "20 Jun", "home": "Países Bajos", "away": "Suecia", "hf": "🇳🇱", "af": "🇸🇪", "eh": "Netherlands", "ea": "Sweden", "preds": ["1|1-0", "1|2-0", "1|3-1", "1|2-1", "2|0-1", "1|1-0", "1|3-1", "1|2-1", "X|1-1", "1|2-1", "X|1-1", "1|2-0", "1|2-1", "1|2-1", "1|2-1"]}, {"g": "F", "code": "F2", "d": "20 Jun", "home": "Túnez", "away": "Japón", "hf": "🇹🇳", "af": "🇯🇵", "eh": "Tunisia", "ea": "Japan", "preds": ["2|0-1", "2|0-1", "2|0-2", "1|2-1", "2|0-2", "2|0-1", "2|0-2", "2|0-2", "2|0-3", "2|1-2", "2|0-2", "2|0-1", "2|1-2", "2|1-3", "2|2-3"]}, {"g": "F", "code": "F3", "d": "25 Jun", "home": "Japón", "away": "Suecia", "hf": "🇯🇵", "af": "🇸🇪", "eh": "Japan", "ea": "Sweden", "preds": ["1|2-1", "X|0-0", "1|3-1", "2|1-2", "1|1-0", "2|0-1", "1|2-1", "X|1-1", "1|2-1", "X|1-1", "X|1-1", "X|1-1", "2|1-3", "1|2-1", "1|2-1"]}, {"g": "F", "code": "F3", "d": "25 Jun", "home": "Túnez", "away": "Países Bajos", "hf": "🇹🇳", "af": "🇳🇱", "eh": "Tunisia", "ea": "Netherlands", "preds": ["2|0-2", "2|1-3", "2|0-4", "2|1-2", "2|0-2", "2|0-1", "2|0-2", "2|0-3", "2|0-4", "2|0-2", "2|0-2", "2|1-3", "2|0-3", "1|1-0", "2|0-2"]}, {"g": "G", "code": "G1", "d": "15 Jun", "home": "Bélgica", "away": "Egipto", "hf": "🇧🇪", "af": "🇪🇬", "eh": "Belgium", "ea": "Egypt", "preds": ["1|2-0", "1|3-0", "X|1-1", "1|2-1", "1|3-1", "1|1-0", "1|2-1", "1|2-1", "1|3-1", "1|2-1", "1|1-0", "1|2-1", "1|2-1", "X|0-0", "1|2-1"]}, {"g": "G", "code": "G1", "d": "15 Jun", "home": "Irán", "away": "Nueva Zelanda", "hf": "🇮🇷", "af": "🇳🇿", "eh": "Iran", "ea": "New Zealand", "preds": ["1|1-0", "X|0-0", "1|1-0", "1|2-0", "1|2-0", "2|0-1", "1|1-0", "1|1-0", "1|1-0", "1|1-0", "1|1-0", "1|1-0", "X|1-1", "1|2-0", "X|2-2"]}, {"g": "G", "code": "G2", "d": "21 Jun", "home": "Bélgica", "away": "Irán", "hf": "🇧🇪", "af": "🇮🇷", "eh": "Belgium", "ea": "Iran", "preds": ["1|2-0", "1|3-0", "1|4-1", "1|2-0", "1|2-0", "1|1-0", "1|2-0", "1|2-0", "1|3-2", "1|3-1", "X|0-0", "1|3-1", "1|3-0", "1|1-0", "1|3-0"]}, {"g": "G", "code": "G2", "d": "21 Jun", "home": "Nueva Zelanda", "away": "Egipto", "hf": "🇳🇿", "af": "🇪🇬", "eh": "New Zealand", "ea": "Egypt", "preds": ["2|0-1", "2|0-1", "X|0-0", "2|0-3", "2|0-2", "2|0-1", "2|0-1", "2|0-2", "2|1-3", "2|1-2", "2|0-1", "2|0-1", "2|0-2", "2|1-3", "X|2-2"]}, {"g": "G", "code": "G3", "d": "26 Jun", "home": "Egipto", "away": "Irán", "hf": "🇪🇬", "af": "🇮🇷", "eh": "Egypt", "ea": "Iran", "preds": ["X|1-1", "X|0-0", "2|1-2", "X|1-1", "1|1-0", "1|1-0", "X|0-0", "1|2-1", "1|3-2", "1|2-1", "1|1-0", "X|1-1", "1|3-1", "X|1-1", "X|2-2"]}, {"g": "G", "code": "G3", "d": "26 Jun", "home": "Nueva Zelanda", "away": "Bélgica", "hf": "🇳🇿", "af": "🇧🇪", "eh": "New Zealand", "ea": "Belgium", "preds": ["2|0-3", "2|0-2", "2|0-3", "2|0-3", "2|0-3", "2|0-1", "2|0-1", "2|0-3", "2|0-2", "2|1-3", "2|0-2", "2|0-2", "2|1-4", "2|0-4", "2|1-2"]}, {"g": "H", "code": "H1", "d": "15 Jun", "home": "España", "away": "Cabo Verde", "hf": "🇪🇸", "af": "🇨🇻", "eh": "Spain", "ea": "Cape Verde", "preds": ["1|4-0", "1|6-0", "1|4-0", "1|4-0", "1|8-0", "1|3-0", "1|2-0", "1|2-0", "1|4-0", "1|3-1", "1|4-1", "1|3-0", "1|3-0", "1|4-0", "1|3-0"]}, {"g": "H", "code": "H1", "d": "15 Jun", "home": "Arabia Saudita", "away": "Uruguay", "hf": "🇸🇦", "af": "🇺🇾", "eh": "Saudi Arabia", "ea": "Uruguay", "preds": ["2|0-2", "2|0-1", "2|1-3", "2|1-2", "2|0-3", "2|0-1", "X|1-1", "2|0-3", "2|0-2", "2|1-2", "2|0-2", "2|1-2", "2|0-2", "X|1-1", "2|1-2"]}, {"g": "H", "code": "H2", "d": "21 Jun", "home": "España", "away": "Arabia Saudita", "hf": "🇪🇸", "af": "🇸🇦", "eh": "Spain", "ea": "Saudi Arabia", "preds": ["1|3-0", "1|3-0", "1|3-0", "1|3-0", "1|3-0", "1|1-0", "1|2-0", "1|3-0", "1|3-1", "1|2-1", "1|3-0", "1|4-1", "1|3-0", "1|3-1", "1|4-1"]}, {"g": "H", "code": "H2", "d": "21 Jun", "home": "Uruguay", "away": "Cabo Verde", "hf": "🇺🇾", "af": "🇨🇻", "eh": "Uruguay", "ea": "Cape Verde", "preds": ["1|2-0", "1|1-0", "1|2-1", "1|3-0", "1|4-0", "1|2-0", "1|3-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|2-1", "1|2-0", "1|3-0"]}, {"g": "H", "code": "H3", "d": "26 Jun", "home": "Cabo Verde", "away": "Arabia Saudita", "hf": "🇨🇻", "af": "🇸🇦", "eh": "Cape Verde", "ea": "Saudi Arabia", "preds": ["X|1-1", "X|2-2", "1|1-0", "X|1-1", "2|0-3", "2|0-1", "2|0-2", "X|1-1", "X|1-1", "2|1-2", "1|1-0", "2|0-1", "X|1-1", "2|1-3", "X|2-2"]}, {"g": "H", "code": "H3", "d": "26 Jun", "home": "Uruguay", "away": "España", "hf": "🇺🇾", "af": "🇪🇸", "eh": "Uruguay", "ea": "Spain", "preds": ["2|1-3", "2|0-2", "2|2-4", "2|1-2", "2|0-2", "2|0-1", "X|1-1", "1|2-1", "2|2-3", "X|2-2", "X|1-1", "2|1-2", "2|1-2", "2|0-1", "2|1-3"]}, {"g": "I", "code": "I1", "d": "16 Jun", "home": "Francia", "away": "Senegal", "hf": "🇫🇷", "af": "🇸🇳", "eh": "France", "ea": "Senegal", "preds": ["1|3-1", "1|2-0", "X|2-2", "1|2-1", "1|2-0", "1|2-0", "1|2-1", "1|2-0", "1|4-1", "1|2-1", "1|3-1", "1|2-1", "1|3-1", "1|2-0", "1|2-0"]}, {"g": "I", "code": "I1", "d": "16 Jun", "home": "Irak", "away": "Noruega", "hf": "🇮🇶", "af": "🇳🇴", "eh": "Iraq", "ea": "Norway", "preds": ["2|1-2", "2|0-4", "2|0-2", "2|0-3", "2|0-2", "2|0-1", "2|0-2", "2|1-2", "2|0-3", "2|1-2", "2|0-2", "2|0-1", "2|0-3", "2|0-2", "2|0-2"]}, {"g": "I", "code": "I2", "d": "22 Jun", "home": "Francia", "away": "Irak", "hf": "🇫🇷", "af": "🇮🇶", "eh": "France", "ea": "Iraq", "preds": ["1|3-0", "1|4-0", "1|3-0", "1|4-1", "1|3-0", "1|3-0", "1|3-0", "1|3-0", "1|5-1", "1|3-0", "1|3-0", "1|3-0", "1|4-0", "1|4-1", "1|4-0"]}, {"g": "I", "code": "I2", "d": "22 Jun", "home": "Noruega", "away": "Senegal", "hf": "🇳🇴", "af": "🇸🇳", "eh": "Norway", "ea": "Senegal", "preds": ["1|1-0", "X|1-1", "1|2-1", "X|1-1", "X|1-1", "1|1-0", "X|1-1", "X|1-1", "1|2-1", "X|2-2", "X|1-1", "1|1-0", "1|2-1", "X|2-2", "X|1-1"]}, {"g": "I", "code": "I3", "d": "26 Jun", "home": "Noruega", "away": "Francia", "hf": "🇳🇴", "af": "🇫🇷", "eh": "Norway", "ea": "France", "preds": ["2|2-3", "X|1-1", "2|1-2", "2|1-2", "2|1-3", "2|1-2", "2|1-2", "2|1-2", "2|3-4", "2|1-2", "2|1-2", "2|1-2", "X|2-2", "2|1-3", "2|1-3"]}, {"g": "I", "code": "I3", "d": "26 Jun", "home": "Senegal", "away": "Irak", "hf": "🇸🇳", "af": "🇮🇶", "eh": "Senegal", "ea": "Iraq", "preds": ["1|1-0", "1|2-0", "1|2-0", "1|3-0", "X|1-1", "1|1-0", "1|2-1", "1|2-0", "1|2-0", "1|2-1", "1|2-1", "1|2-0", "1|2-1", "1|1-0", "1|2-0"]}, {"g": "J", "code": "J1", "d": "16 Jun", "home": "Argentina", "away": "Argelia", "hf": "🇦🇷", "af": "🇩🇿", "eh": "Argentina", "ea": "Algeria", "preds": ["1|2-0", "1|2-1", "1|2-1", "1|2-0", "1|3-0", "1|1-0", "1|3-1", "1|2-0", "1|2-0", "1|2-1", "1|3-0", "1|2-0", "1|2-0", "1|3-1", "1|2-1"]}, {"g": "J", "code": "J1", "d": "16 Jun", "home": "Austria", "away": "Jordania", "hf": "🇦🇹", "af": "🇯🇴", "eh": "Austria", "ea": "Jordan", "preds": ["1|2-1", "1|3-0", "1|2-0", "1|3-0", "1|3-0", "1|1-0", "1|1-0", "1|2-1", "X|1-1", "1|2-0", "1|2-0", "1|1-0", "1|2-0", "1|3-0", "1|2-0"]}, {"g": "J", "code": "J2", "d": "22 Jun", "home": "Argentina", "away": "Austria", "hf": "🇦🇷", "af": "🇦🇹", "eh": "Argentina", "ea": "Austria", "preds": ["X|2-2", "1|1-0", "X|1-1", "X|1-1", "1|2-0", "1|1-0", "1|1-0", "1|2-1", "1|3-1", "1|2-1", "X|2-2", "1|2-1", "1|3-1", "X|0-0", "1|2-1"]}, {"g": "J", "code": "J2", "d": "22 Jun", "home": "Jordania", "away": "Argelia", "hf": "🇯🇴", "af": "🇩🇿", "eh": "Jordan", "ea": "Algeria", "preds": ["2|0-1", "X|0-0", "2|0-1", "2|0-1", "2|0-2", "2|0-1", "X|0-0", "2|0-2", "2|0-2", "2|0-1", "2|0-1", "2|0-2", "2|0-2", "2|1-2", "2|1-2"]}, {"g": "J", "code": "J3", "d": "27 Jun", "home": "Argelia", "away": "Austria", "hf": "🇩🇿", "af": "🇦🇹", "eh": "Algeria", "ea": "Austria", "preds": ["2|0-1", "X|1-1", "2|1-2", "2|0-2", "2|1-2", "2|0-1", "X|1-1", "X|1-1", "2|1-2", "X|1-1", "2|0-1", "2|1-2", "X|0-0", "X|2-2", "X|1-1"]}, {"g": "J", "code": "J3", "d": "27 Jun", "home": "Jordania", "away": "Argentina", "hf": "🇯🇴", "af": "🇦🇷", "eh": "Jordan", "ea": "Argentina", "preds": ["2|0-2", "2|0-4", "2|0-3", "2|0-3", "2|0-4", "2|0-1", "2|0-2", "2|0-3", "2|0-4", "2|1-2", "2|0-1", "2|0-3", "2|1-3", "2|1-4", "2|0-3"]}, {"g": "K", "code": "K1", "d": "17 Jun", "home": "Portugal", "away": "RD Congo", "hf": "🇵🇹", "af": "🇨🇩", "eh": "Portugal", "ea": "DR Congo", "preds": ["1|3-0", "1|4-0", "1|2-0", "1|2-0", "1|6-0", "1|2-0", "1|4-1", "1|4-0", "1|4-1", "1|2-1", "1|4-0", "1|3-1", "1|5-0", "1|2-0", "1|2-0"]}, {"g": "K", "code": "K1", "d": "17 Jun", "home": "Uzbekistán", "away": "Colombia", "hf": "🇺🇿", "af": "🇨🇴", "eh": "Uzbekistan", "ea": "Colombia", "preds": ["2|0-2", "2|0-2", "2|0-3", "2|0-2", "2|0-3", "2|0-2", "2|0-2", "2|0-2", "2|1-2", "2|0-2", "2|1-2", "2|1-2", "2|0-3", "X|1-1", "2|1-2"]}, {"g": "K", "code": "K2", "d": "23 Jun", "home": "Portugal", "away": "Uzbekistán", "hf": "🇵🇹", "af": "🇺🇿", "eh": "Portugal", "ea": "Uzbekistan", "preds": ["1|1-0", "1|3-1", "1|4-1", "1|2-0", "1|4-0", "1|2-0", "1|2-0", "1|3-0", "1|3-0", "1|3-0", "1|2-0", "1|2-1", "1|3-1", "1|2-1", "1|3-0"]}, {"g": "K", "code": "K2", "d": "23 Jun", "home": "Colombia", "away": "RD Congo", "hf": "🇨🇴", "af": "🇨🇩", "eh": "Colombia", "ea": "DR Congo", "preds": ["1|1-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|2-0", "1|3-2", "X|2-2", "1|1-0", "1|1-0", "1|2-0", "1|1-0", "1|2-1"]}, {"g": "K", "code": "K3", "d": "27 Jun", "home": "Colombia", "away": "Portugal", "hf": "🇨🇴", "af": "🇵🇹", "eh": "Colombia", "ea": "Portugal", "preds": ["2|1-3", "X|2-2", "X|2-2", "2|1-2", "X|1-1", "2|0-1", "2|2-3", "2|1-2", "2|2-3", "2|1-2", "X|1-1", "2|1-2", "2|1-3", "X|2-2", "X|2-2"]}, {"g": "K", "code": "K3", "d": "27 Jun", "home": "RD Congo", "away": "Uzbekistán", "hf": "🇨🇩", "af": "🇺🇿", "eh": "DR Congo", "ea": "Uzbekistan", "preds": ["1|2-0", "X|0-0", "2|1-2", "1|1-0", "1|1-0", "1|1-0", "1|1-0", "X|1-1", "1|1-0", "1|3-1", "X|0-0", "X|1-1", "X|2-2", "2|1-3", "1|2-1"]}, {"g": "L", "code": "L1", "d": "17 Jun", "home": "Inglaterra", "away": "Croacia", "hf": "[ENG]", "af": "🇭🇷", "eh": "England", "ea": "Croatia", "preds": ["X|2-2", "X|1-1", "1|2-1", "1|2-1", "1|2-1", "1|1-0", "1|2-1", "X|1-1", "2|2-3", "2|1-2", "1|2-1", "1|2-1", "1|3-2", "X|1-1", "1|2-1"]}, {"g": "L", "code": "L1", "d": "17 Jun", "home": "Ghana", "away": "Panamá", "hf": "🇬🇭", "af": "🇵🇦", "eh": "Ghana", "ea": "Panama", "preds": ["1|1-0", "X|0-0", "1|2-1", "1|3-0", "1|2-0", "1|1-0", "1|3-0", "1|2-0", "1|2-1", "1|2-0", "2|0-1", "1|1-0", "1|2-0", "1|2-0", "X|1-1"]}, {"g": "L", "code": "L2", "d": "23 Jun", "home": "Inglaterra", "away": "Ghana", "hf": "[ENG]", "af": "🇬🇭", "eh": "England", "ea": "Ghana", "preds": ["1|2-0", "1|3-0", "1|1-0", "1|2-1", "1|3-1", "1|1-0", "1|3-1", "1|2-1", "1|5-1", "X|1-1", "X|1-1", "1|1-0", "1|3-1", "1|2-1", "1|4-1"]}, {"g": "L", "code": "L2", "d": "23 Jun", "home": "Panamá", "away": "Croacia", "hf": "🇵🇦", "af": "🇭🇷", "eh": "Panama", "ea": "Croatia", "preds": ["2|0-2", "2|0-1", "2|0-2", "2|0-2", "2|0-2", "2|0-1", "2|0-4", "2|0-3", "2|1-4", "2|0-1", "2|0-2", "2|0-2", "2|1-3", "2|1-2", "2|0-2"]}, {"g": "L", "code": "L3", "d": "27 Jun", "home": "Panamá", "away": "Inglaterra", "hf": "🇵🇦", "af": "[ENG]", "eh": "Panama", "ea": "England", "preds": ["2|0-3", "2|0-2", "2|0-3", "2|0-3", "2|0-4", "2|0-1", "2|0-2", "2|0-3", "2|1-2", "2|0-2", "2|1-2", "2|1-2", "2|1-4", "2|0-3", "2|0-4"]}, {"g": "L", "code": "L3", "d": "27 Jun", "home": "Croacia", "away": "Ghana", "hf": "🇭🇷", "af": "🇬🇭", "eh": "Croatia", "ea": "Ghana", "preds": ["1|1-0", "1|1-0", "X|1-1", "1|2-1", "X|1-1", "1|1-0", "1|3-1", "1|2-1", "1|3-1", "1|2-1", "1|2-1", "1|1-0", "1|2-0", "X|2-2", "1|2-0"]}];
+
 function show(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
@@ -108,284 +104,180 @@ function show(id,btn){
   btn.classList.add('active');
 }
 
-// ── RANKING DATA ──────────────────────────────────────
-const players=[
-  {name:'Soler',pts:0,aciertos:0},{name:'Mairal',pts:0,aciertos:0},
-  {name:'Iñigo Zalba',pts:0,aciertos:0},{name:'Zalba Junior',pts:0,aciertos:0},
-  {name:'Alex Zalba',pts:0,aciertos:0},{name:'Giacchi',pts:0,aciertos:0},
-  {name:'Ander',pts:0,aciertos:0},{name:'Muskiz',pts:0,aciertos:0},
-  {name:'Landa',pts:0,aciertos:0},{name:'Diego',pts:0,aciertos:0},
-  {name:'Liza',pts:0,aciertos:0},{name:'Sanpe',pts:0,aciertos:0},
-  {name:'Olague',pts:0,aciertos:0},{name:'Iker',pts:0,aciertos:0},
-  {name:'Berjano',pts:0,aciertos:0}
-];
-const medals=['&#129351;','&#129352;','&#129353;'];
-function renderRanking(){
-  const s=[...players].sort((a,b)=>b.pts-a.pts||b.aciertos-a.aciertos);
-  document.getElementById('rankBody').innerHTML=s.map((p,i)=>`<tr>
-    <td class="rpos${i<3?' top':''}">${medals[i]||i+1}</td>
-    <td class="rnm">${p.name}</td>
-    <td class="rac">${p.aciertos}</td>
-    <td class="rpt">${p.pts} <span style="font-size:.62rem;color:#3a5a7a">pts</span></td>
-  </tr>`).join('');
+// live results: array parallel to MATCHES, each null or {status,hs,as,clock}
+let LIVE=MATCHES.map(()=>null);
+
+function signOf(h,a){return h>a?'1':h<a?'2':'X';}
+
+function pointsFor(pred,hs,as){
+  if(!pred)return null;
+  const[sign,score]=pred.split('|');
+  if(score===undefined)return null;
+  const[ph,pa]=score.split('-').map(Number);
+  if(isNaN(ph))return null;
+  const realSign=signOf(hs,as);
+  let pts=0;
+  if(sign===realSign)pts+=1;
+  if(ph===hs&&pa===as)pts+=3;
+  return pts;
 }
-renderRanking();
 
-// ── GRUPOS DATA ───────────────────────────────────────
-const groups=[
-  {id:'A',teams:[{f:'&#127474;&#127485;',n:'Mexico'},{f:'&#127472;&#127479;',n:'Corea del Sur'},{f:'&#127487;&#127462;',n:'Sudafrica'},{f:'&#127464;&#127487;',n:'Rep. Checa'}]},
-  {id:'B',teams:[{f:'&#127464;&#127462;',n:'Canada'},{f:'&#127464;&#127469;',n:'Suiza'},{f:'&#127478;&#127462;',n:'Qatar'},{f:'&#127463;&#127462;',n:'Bosnia'}]},
-  {id:'C',teams:[{f:'&#127463;&#127479;',n:'Brasil'},{f:'&#127474;&#127462;',n:'Marruecos'},{f:'[SCO]',n:'Escocia'},{f:'&#127469;&#127481;',n:'Haiti'}]},
-  {id:'D',teams:[{f:'&#127482;&#127480;',n:'EE.UU.'},{f:'&#127477;&#127486;',n:'Paraguay'},{f:'&#127462;&#127482;',n:'Australia'},{f:'&#127481;&#127479;',n:'Turquia'}]},
-  {id:'E',teams:[{f:'&#127465;&#127466;',n:'Alemania'},{f:'&#127464;&#127484;',n:'Curazao'},{f:'&#127466;&#127464;',n:'Ecuador'},{f:'&#127464;&#127470;',n:'Costa de Marfil'}]},
-  {id:'F',teams:[{f:'&#127475;&#127473;',n:'Paises Bajos'},{f:'&#127471;&#127477;',n:'Japan'},{f:'&#127481;&#127475;',n:'Tunez'},{f:'&#127480;&#127466;',n:'Suecia'}]},
-  {id:'G',teams:[{f:'&#127463;&#127466;',n:'Belgica'},{f:'&#127466;&#127468;',n:'Egipto'},{f:'&#127470;&#127479;',n:'Iran'},{f:'&#127475;&#127487;',n:'Nueva Zelanda'}]},
-  {id:'H',esp:true,teams:[{f:'&#127466;&#127480;',n:'Espana'},{f:'&#127464;&#127483;',n:'Cabo Verde'},{f:'&#127480;&#127462;',n:'Arabia Saudi'},{f:'&#127482;&#127486;',n:'Uruguay'}]},
-  {id:'I',teams:[{f:'&#127467;&#127479;',n:'Francia'},{f:'&#127480;&#127475;',n:'Senegal'},{f:'&#127470;&#127478;',n:'Irak'},{f:'&#127475;&#127476;',n:'Noruega'}]},
-  {id:'J',teams:[{f:'&#127462;&#127479;',n:'Argentina'},{f:'&#127465;&#127487;',n:'Argelia'},{f:'&#127462;&#127481;',n:'Austria'},{f:'&#127471;&#127476;',n:'Jordania'}]},
-  {id:'K',teams:[{f:'&#127477;&#127481;',n:'Portugal'},{f:'&#127464;&#127465;',n:'RD Congo'},{f:'&#127482;&#127487;',n:'Uzbekistan'},{f:'&#127464;&#127476;',n:'Colombia'}]},
-  {id:'L',teams:[{f:'[ENG]',n:'Inglaterra'},{f:'&#127469;&#127479;',n:'Croacia'},{f:'&#127468;&#127469;',n:'Ghana'},{f:'&#127477;&#127462;',n:'Panama'}]}
-];
-function renderGroups(){
-  document.getElementById('groupGrid').innerHTML=groups.map(g=>`
-    <div class="group-block${g.esp?' esp':''}">
-      <div class="gh">GRUPO ${g.id}${g.esp?' &#11088;':''}</div>
-      ${g.teams.map((t,i)=>`
-        <div class="gt" id="gt-${g.id}-${i}">
-          <span class="gf">${t.f}</span>
-          <span class="gn">${t.n}</span>
-          <span class="gst">0J 0G 0E 0P</span>
-          <span class="gpts">0</span>
-        </div>`).join('')}
-    </div>`).join('');
-}
-renderGroups();
-
-// ── PARTIDOS DATA ─────────────────────────────────────
-// Horarios en hora de España (CEST = UTC+2)
-// espnId: slug que usa ESPN para emparejar resultados live
-const matches=[
-  // GRUPO A
-  {g:'A',d:'11 Jun',h:'21:00',local:'Mexico',vis:'Sudafrica',lf:'&#127474;&#127485;',vf:'&#127487;&#127462;',stadium:'Azteca CDMX',espnTeams:['Mexico','South Africa']},
-  {g:'A',d:'12 Jun',h:'04:00',local:'Corea del Sur',vis:'Rep. Checa',lf:'&#127472;&#127479;',vf:'&#127464;&#127487;',stadium:'Guadalajara',espnTeams:['South Korea','Czech Republic']},
-  {g:'A',d:'18 Jun',h:'18:00',local:'Rep. Checa',vis:'Sudafrica',lf:'&#127464;&#127487;',vf:'&#127487;&#127462;',stadium:'Atlanta',espnTeams:['Czech Republic','South Africa']},
-  {g:'A',d:'19 Jun',h:'03:00',local:'Mexico',vis:'Corea del Sur',lf:'&#127474;&#127485;',vf:'&#127472;&#127479;',stadium:'Guadalajara',espnTeams:['Mexico','South Korea']},
-  {g:'A',d:'25 Jun',h:'03:00',local:'Rep. Checa',vis:'Mexico',lf:'&#127464;&#127487;',vf:'&#127474;&#127485;',stadium:'CDMX',espnTeams:['Czech Republic','Mexico']},
-  {g:'A',d:'25 Jun',h:'03:00',local:'Sudafrica',vis:'Corea del Sur',lf:'&#127487;&#127462;',vf:'&#127472;&#127479;',stadium:'Monterrey',espnTeams:['South Africa','South Korea']},
-  // GRUPO B
-  {g:'B',d:'12 Jun',h:'21:00',local:'Canada',vis:'Bosnia',lf:'&#127464;&#127462;',vf:'&#127463;&#127462;',stadium:'Toronto',espnTeams:['Canada','Bosnia and Herzegovina']},
-  {g:'B',d:'13 Jun',h:'21:00',local:'Qatar',vis:'Suiza',lf:'&#127478;&#127462;',vf:'&#127464;&#127469;',stadium:'San Francisco',espnTeams:['Qatar','Switzerland']},
-  {g:'B',d:'19 Jun',h:'03:00',local:'Suiza',vis:'Bosnia',lf:'&#127464;&#127469;',vf:'&#127463;&#127462;',stadium:'Los Angeles',espnTeams:['Switzerland','Bosnia and Herzegovina']},
-  {g:'B',d:'19 Jun',h:'00:00',local:'Canada',vis:'Qatar',lf:'&#127464;&#127462;',vf:'&#127478;&#127462;',stadium:'Vancouver',espnTeams:['Canada','Qatar']},
-  {g:'B',d:'25 Jun',h:'00:00',local:'Suiza',vis:'Canada',lf:'&#127464;&#127469;',vf:'&#127464;&#127462;',stadium:'Vancouver',espnTeams:['Switzerland','Canada']},
-  {g:'B',d:'25 Jun',h:'00:00',local:'Bosnia',vis:'Qatar',lf:'&#127463;&#127462;',vf:'&#127478;&#127462;',stadium:'Seattle',espnTeams:['Bosnia and Herzegovina','Qatar']},
-  // GRUPO C
-  {g:'C',d:'14 Jun',h:'00:00',local:'Brasil',vis:'Marruecos',lf:'&#127463;&#127479;',vf:'&#127474;&#127462;',stadium:'NY/NJ',espnTeams:['Brazil','Morocco']},
-  {g:'C',d:'14 Jun',h:'03:00',local:'Haiti',vis:'Escocia',lf:'&#127469;&#127481;',vf:'[SCO]',stadium:'Boston',espnTeams:['Haiti','Scotland']},
-  {g:'C',d:'20 Jun',h:'03:00',local:'Escocia',vis:'Marruecos',lf:'[SCO]',vf:'&#127474;&#127462;',stadium:'Boston',espnTeams:['Scotland','Morocco']},
-  {g:'C',d:'20 Jun',h:'03:00',local:'Brasil',vis:'Haiti',lf:'&#127463;&#127479;',vf:'&#127469;&#127481;',stadium:'Filadelfia',espnTeams:['Brazil','Haiti']},
-  {g:'C',d:'25 Jun',h:'00:00',local:'Escocia',vis:'Brasil',lf:'[SCO]',vf:'&#127463;&#127479;',stadium:'Miami',espnTeams:['Scotland','Brazil']},
-  {g:'C',d:'25 Jun',h:'00:00',local:'Marruecos',vis:'Haiti',lf:'&#127474;&#127462;',vf:'&#127469;&#127481;',stadium:'Atlanta',espnTeams:['Morocco','Haiti']},
-  // GRUPO D
-  {g:'D',d:'13 Jun',h:'03:00',local:'EE.UU.',vis:'Paraguay',lf:'&#127482;&#127480;',vf:'&#127477;&#127486;',stadium:'Los Angeles',espnTeams:['USA','Paraguay']},
-  {g:'D',d:'14 Jun',h:'03:00',local:'Australia',vis:'Turquia',lf:'&#127462;&#127482;',vf:'&#127481;&#127479;',stadium:'Vancouver',espnTeams:['Australia','Turkey']},
-  {g:'D',d:'20 Jun',h:'03:00',local:'Turquia',vis:'Paraguay',lf:'&#127481;&#127479;',vf:'&#127477;&#127486;',stadium:'San Francisco',espnTeams:['Turkey','Paraguay']},
-  {g:'D',d:'20 Jun',h:'21:00',local:'EE.UU.',vis:'Australia',lf:'&#127482;&#127480;',vf:'&#127462;&#127482;',stadium:'Seattle',espnTeams:['USA','Australia']},
-  {g:'D',d:'26 Jun',h:'03:00',local:'Turquia',vis:'EE.UU.',lf:'&#127481;&#127479;',vf:'&#127482;&#127480;',stadium:'Los Angeles',espnTeams:['Turkey','USA']},
-  {g:'D',d:'26 Jun',h:'03:00',local:'Paraguay',vis:'Australia',lf:'&#127477;&#127486;',vf:'&#127462;&#127482;',stadium:'San Francisco',espnTeams:['Paraguay','Australia']},
-  // GRUPO E
-  {g:'E',d:'14 Jun',h:'19:00',local:'Alemania',vis:'Curazao',lf:'&#127465;&#127466;',vf:'&#127464;&#127484;',stadium:'Houston',espnTeams:['Germany','Curacao']},
-  {g:'E',d:'15 Jun',h:'00:00',local:'C. de Marfil',vis:'Ecuador',lf:'&#127464;&#127470;',vf:'&#127466;&#127464;',stadium:'Kansas City',espnTeams:['Ivory Coast','Ecuador']},
-  {g:'E',d:'20 Jun',h:'21:00',local:'Ecuador',vis:'Curazao',lf:'&#127466;&#127464;',vf:'&#127464;&#127484;',stadium:'Kansas City',espnTeams:['Ecuador','Curacao']},
-  {g:'E',d:'21 Jun',h:'03:00',local:'Alemania',vis:'C. de Marfil',lf:'&#127465;&#127466;',vf:'&#127464;&#127470;',stadium:'Dallas',espnTeams:['Germany','Ivory Coast']},
-  {g:'E',d:'26 Jun',h:'21:00',local:'Ecuador',vis:'Alemania',lf:'&#127466;&#127464;',vf:'&#127465;&#127466;',stadium:'NY/NJ',espnTeams:['Ecuador','Germany']},
-  {g:'E',d:'27 Jun',h:'03:00',local:'Curazao',vis:'C. de Marfil',lf:'&#127464;&#127484;',vf:'&#127464;&#127470;',stadium:'Miami',espnTeams:['Curacao','Ivory Coast']},
-  // GRUPO F
-  {g:'F',d:'15 Jun',h:'00:00',local:'Paises Bajos',vis:'Suecia',lf:'&#127475;&#127473;',vf:'&#127480;&#127466;',stadium:'Monterrey',espnTeams:['Netherlands','Sweden']},
-  {g:'F',d:'15 Jun',h:'03:00',local:'Japan',vis:'Tunez',lf:'&#127471;&#127477;',vf:'&#127481;&#127475;',stadium:'Houston',espnTeams:['Japan','Tunisia']},
-  {g:'F',d:'21 Jun',h:'03:00',local:'Suecia',vis:'Tunez',lf:'&#127480;&#127466;',vf:'&#127481;&#127475;',stadium:'Monterrey',espnTeams:['Sweden','Tunisia']},
-  {g:'F',d:'21 Jun',h:'03:00',local:'Paises Bajos',vis:'Japan',lf:'&#127475;&#127473;',vf:'&#127471;&#127477;',stadium:'Dallas',espnTeams:['Netherlands','Japan']},
-  {g:'F',d:'27 Jun',h:'03:00',local:'Suecia',vis:'Japan',lf:'&#127480;&#127466;',vf:'&#127471;&#127477;',stadium:'Monterrey',espnTeams:['Sweden','Japan']},
-  {g:'F',d:'27 Jun',h:'03:00',local:'Tunez',vis:'Paises Bajos',lf:'&#127481;&#127475;',vf:'&#127475;&#127473;',stadium:'Houston',espnTeams:['Tunisia','Netherlands']},
-  // GRUPO G
-  {g:'G',d:'15 Jun',h:'22:00',local:'Belgica',vis:'Egipto',lf:'&#127463;&#127466;',vf:'&#127466;&#127468;',stadium:'Seattle',espnTeams:['Belgium','Egypt']},
-  {g:'G',d:'16 Jun',h:'01:00',local:'Iran',vis:'Nueva Zelanda',lf:'&#127470;&#127479;',vf:'&#127475;&#127487;',stadium:'Los Angeles',espnTeams:['Iran','New Zealand']},
-  {g:'G',d:'21 Jun',h:'22:00',local:'Belgica',vis:'Nueva Zelanda',lf:'&#127463;&#127466;',vf:'&#127475;&#127487;',stadium:'Seattle',espnTeams:['Belgium','New Zealand']},
-  {g:'G',d:'22 Jun',h:'03:00',local:'Iran',vis:'Egipto',lf:'&#127470;&#127479;',vf:'&#127466;&#127468;',stadium:'Los Angeles',espnTeams:['Iran','Egypt']},
-  {g:'G',d:'27 Jun',h:'22:00',local:'Egipto',vis:'Nueva Zelanda',lf:'&#127466;&#127468;',vf:'&#127475;&#127487;',stadium:'Seattle',espnTeams:['Egypt','New Zealand']},
-  {g:'G',d:'28 Jun',h:'03:00',local:'Belgica',vis:'Iran',lf:'&#127463;&#127466;',vf:'&#127470;&#127479;',stadium:'Los Angeles',espnTeams:['Belgium','Iran']},
-  // GRUPO H
-  {g:'H',d:'15 Jun',h:'19:00',local:'Espana',vis:'Cabo Verde',lf:'&#127466;&#127480;',vf:'&#127464;&#127483;',stadium:'Atlanta',espnTeams:['Spain','Cape Verde']},
-  {g:'H',d:'15 Jun',h:'22:00',local:'Arabia Saudi',vis:'Uruguay',lf:'&#127480;&#127462;',vf:'&#127482;&#127486;',stadium:'Miami',espnTeams:['Saudi Arabia','Uruguay']},
-  {g:'H',d:'21 Jun',h:'19:00',local:'Espana',vis:'Arabia Saudi',lf:'&#127466;&#127480;',vf:'&#127480;&#127462;',stadium:'Atlanta',espnTeams:['Spain','Saudi Arabia']},
-  {g:'H',d:'22 Jun',h:'01:00',local:'Cabo Verde',vis:'Uruguay',lf:'&#127464;&#127483;',vf:'&#127482;&#127486;',stadium:'Miami',espnTeams:['Cape Verde','Uruguay']},
-  {g:'H',d:'28 Jun',h:'03:00',local:'Espana',vis:'Uruguay',lf:'&#127466;&#127480;',vf:'&#127482;&#127486;',stadium:'Guadalajara',espnTeams:['Spain','Uruguay']},
-  {g:'H',d:'28 Jun',h:'03:00',local:'Cabo Verde',vis:'Arabia Saudi',lf:'&#127464;&#127483;',vf:'&#127480;&#127462;',stadium:'Miami',espnTeams:['Cape Verde','Saudi Arabia']},
-  // GRUPO I
-  {g:'I',d:'16 Jun',h:'21:00',local:'Francia',vis:'Senegal',lf:'&#127467;&#127479;',vf:'&#127480;&#127475;',stadium:'NY/NJ',espnTeams:['France','Senegal']},
-  {g:'I',d:'17 Jun',h:'00:00',local:'Irak',vis:'Noruega',lf:'&#127470;&#127478;',vf:'&#127475;&#127476;',stadium:'Boston',espnTeams:['Iraq','Norway']},
-  {g:'I',d:'23 Jun',h:'00:00',local:'Noruega',vis:'Senegal',lf:'&#127475;&#127476;',vf:'&#127480;&#127475;',stadium:'NY/NJ',espnTeams:['Norway','Senegal']},
-  {g:'I',d:'23 Jun',h:'00:00',local:'Francia',vis:'Irak',lf:'&#127467;&#127479;',vf:'&#127470;&#127478;',stadium:'Boston',espnTeams:['France','Iraq']},
-  {g:'I',d:'27 Jun',h:'03:00',local:'Noruega',vis:'Francia',lf:'&#127475;&#127476;',vf:'&#127467;&#127479;',stadium:'Boston',espnTeams:['Norway','France']},
-  {g:'I',d:'27 Jun',h:'03:00',local:'Senegal',vis:'Irak',lf:'&#127480;&#127475;',vf:'&#127470;&#127478;',stadium:'NY/NJ',espnTeams:['Senegal','Iraq']},
-  // GRUPO J
-  {g:'J',d:'17 Jun',h:'03:00',local:'Argentina',vis:'Argelia',lf:'&#127462;&#127479;',vf:'&#127465;&#127487;',stadium:'Kansas City',espnTeams:['Argentina','Algeria']},
-  {g:'J',d:'17 Jun',h:'06:00',local:'Austria',vis:'Jordania',lf:'&#127462;&#127481;',vf:'&#127471;&#127476;',stadium:'San Francisco',espnTeams:['Austria','Jordan']},
-  {g:'J',d:'23 Jun',h:'03:00',local:'Argentina',vis:'Austria',lf:'&#127462;&#127479;',vf:'&#127462;&#127481;',stadium:'Kansas City',espnTeams:['Argentina','Austria']},
-  {g:'J',d:'23 Jun',h:'22:00',local:'Argelia',vis:'Jordania',lf:'&#127465;&#127487;',vf:'&#127471;&#127476;',stadium:'Dallas',espnTeams:['Algeria','Jordan']},
-  {g:'J',d:'28 Jun',h:'03:00',local:'Argentina',vis:'Jordania',lf:'&#127462;&#127479;',vf:'&#127471;&#127476;',stadium:'Kansas City',espnTeams:['Argentina','Jordan']},
-  {g:'J',d:'28 Jun',h:'03:00',local:'Argelia',vis:'Austria',lf:'&#127465;&#127487;',vf:'&#127462;&#127481;',stadium:'Dallas',espnTeams:['Algeria','Austria']},
-  // GRUPO K
-  {g:'K',d:'17 Jun',h:'19:00',local:'Portugal',vis:'RD Congo',lf:'&#127477;&#127481;',vf:'&#127464;&#127465;',stadium:'Houston',espnTeams:['Portugal','DR Congo']},
-  {g:'K',d:'18 Jun',h:'04:00',local:'Uzbekistan',vis:'Colombia',lf:'&#127482;&#127487;',vf:'&#127464;&#127476;',stadium:'CDMX',espnTeams:['Uzbekistan','Colombia']},
-  {g:'K',d:'23 Jun',h:'21:00',local:'Portugal',vis:'Uzbekistan',lf:'&#127477;&#127481;',vf:'&#127482;&#127487;',stadium:'Houston',espnTeams:['Portugal','Uzbekistan']},
-  {g:'K',d:'24 Jun',h:'00:00',local:'RD Congo',vis:'Colombia',lf:'&#127464;&#127465;',vf:'&#127464;&#127476;',stadium:'Atlanta',espnTeams:['DR Congo','Colombia']},
-  {g:'K',d:'28 Jun',h:'21:00',local:'Portugal',vis:'Colombia',lf:'&#127477;&#127481;',vf:'&#127464;&#127476;',stadium:'Miami',espnTeams:['Portugal','Colombia']},
-  {g:'K',d:'29 Jun',h:'00:00',local:'RD Congo',vis:'Uzbekistan',lf:'&#127464;&#127465;',vf:'&#127482;&#127487;',stadium:'Atlanta',espnTeams:['DR Congo','Uzbekistan']},
-  // GRUPO L
-  {g:'L',d:'17 Jun',h:'22:00',local:'Inglaterra',vis:'Croacia',lf:'[ENG]',vf:'&#127469;&#127479;',stadium:'Dallas',espnTeams:['England','Croatia']},
-  {g:'L',d:'18 Jun',h:'01:00',local:'Ghana',vis:'Panama',lf:'&#127468;&#127469;',vf:'&#127477;&#127462;',stadium:'Toronto',espnTeams:['Ghana','Panama']},
-  {g:'L',d:'23 Jun',h:'21:00',local:'Inglaterra',vis:'Ghana',lf:'[ENG]',vf:'&#127468;&#127469;',stadium:'Boston',espnTeams:['England','Ghana']},
-  {g:'L',d:'24 Jun',h:'01:00',local:'Croacia',vis:'Panama',lf:'&#127469;&#127479;',vf:'&#127477;&#127462;',stadium:'NY/NJ',espnTeams:['Croatia','Panama']},
-  {g:'L',d:'27 Jun',h:'23:00',local:'Inglaterra',vis:'Panama',lf:'[ENG]',vf:'&#127477;&#127462;',stadium:'NY/NJ',espnTeams:['England','Panama']},
-  {g:'L',d:'28 Jun',h:'01:00',local:'Croacia',vis:'Ghana',lf:'&#127469;&#127479;',vf:'&#127468;&#127469;',stadium:'Boston',espnTeams:['Croatia','Ghana']}
-];
-
-// ── RENDER PARTIDOS ───────────────────────────────────
-let matchesHtml=''; // cached so scorers div survives re-renders
-function renderMatches(liveData){
-  let html='';
-  let curG='';
-  matches.forEach((m,i)=>{
+function renderMatches(){
+  let html='',curG='';
+  MATCHES.forEach((m,i)=>{
     if(m.g!==curG){
-      const label=m.g==='H'?'Grupo H — Espana &#11088;':'Grupo '+m.g;
-      html+=`<div class="slabel">${label}</div>`;
+      html+=`<div class="slabel">${m.g==='H'?'Grupo H — España ⭐':'Grupo '+m.g}</div>`;
       curG=m.g;
     }
-    const live=liveData&&liveData[i];
-    let statusClass='s-soon', statusTxt=`${m.d}<br>${m.h}`, isLive=false;
-    let ls='&#183;', vs='&#183;', scClass='';
-    if(live){
-      if(live.status==='in'){
-        statusClass='s-live';statusTxt=`EN VIVO<br>${live.clock||''}`;isLive=true;
-        ls=live.homeScore;vs=live.awayScore;scClass=' updated';
-      } else if(live.status==='post'){
-        statusClass='s-done';statusTxt='FIN';
-        ls=live.homeScore;vs=live.awayScore;scClass=' updated';
-      }
+    const lv=LIVE[i];
+    let sc='s-soon',st=m.d,isL=false,ls='·',vs='·',cl='';
+    if(lv){
+      if(lv.status==='in'){sc='s-live';st='EN VIVO<br>'+(lv.clock||'');isL=true;ls=lv.hs;vs=lv.as;cl=' updated';}
+      else if(lv.status==='post'){sc='s-done';st='FIN';ls=lv.hs;vs=lv.as;cl=' updated';}
     }
-    html+=`<div class="match${isLive?' live':''}" id="m${i}">
-      <span class="m-status ${statusClass}">${statusTxt}</span>
+    html+=`<div class="match${isL?' live':''}">
+      <span class="m-status ${sc}">${st}</span>
       <div class="m-teams">
-        <span class="m-team right">${m.lf} ${m.local}</span>
-        <div class="m-score">
-          <span class="sc${scClass}">${ls}</span>
-          <span class="sep">-</span>
-          <span class="sc${scClass}">${vs}</span>
-        </div>
-        <span class="m-team">${m.vf} ${m.vis}</span>
+        <span class="m-team right">${m.hf} ${m.home}</span>
+        <div class="m-score"><span class="sc${cl}">${ls}</span><span class="sep">-</span><span class="sc${cl}">${vs}</span></div>
+        <span class="m-team">${m.af} ${m.away}</span>
       </div>
-      <span class="m-info">${m.stadium}</span>
     </div>`;
   });
   document.getElementById('matchList').innerHTML=html;
 }
-renderMatches(null);
 
-// ── RENDER GOLEADORES ────────────────────────────────
+function renderPreds(){
+  let html='',curG='';
+  MATCHES.forEach((m,i)=>{
+    if(m.g!==curG){
+      html+=`<div class="slabel">${m.g==='H'?'Grupo H — España ⭐':'Grupo '+m.g}</div>`;
+      curG=m.g;
+    }
+    const lv=LIVE[i];
+    const finished=lv&&(lv.status==='post'||lv.status==='in');
+    let resTxt=finished?`${lv.hs}-${lv.as}${lv.status==='in'?' (en juego)':''}`:m.d;
+    let cells=PLAYERS.map((p,j)=>{
+      const pred=m.preds[j]||'';
+      const disp=pred?pred.split('|')[1]||pred:'—';
+      let cls='';
+      if(finished&&pred){
+        const pts=pointsFor(pred,parseInt(lv.hs),parseInt(lv.as));
+        cls=pts>=4?' hit4':pts>=1?' hit1':' miss';
+      }
+      return `<div class="pcell${cls}"><div class="pn">${p}</div><div class="pv">${disp}</div></div>`;
+    }).join('');
+    html+=`<div class="pmatch${finished?' done':''}">
+      <div class="pmh">${m.hf} ${m.home} <span style="color:#3a5a7a">vs</span> ${m.af} ${m.away}<span class="res">${resTxt}</span></div>
+      <div class="pgrid">${cells}</div>
+    </div>`;
+  });
+  document.getElementById('predList').innerHTML=html;
+}
+
+function renderRanking(){
+  const totals=PLAYERS.map((p,j)=>{
+    let pts=0,exact=0,signs=0;
+    MATCHES.forEach((m,i)=>{
+      const lv=LIVE[i];
+      if(!lv||lv.status!=='post')return;
+      const pp=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as));
+      if(pp===null)return;
+      pts+=pp;
+      if(pp>=4)exact++;else if(pp>=1)signs++;
+    });
+    return{name:p,pts,exact,signs};
+  });
+  totals.sort((a,b)=>b.pts-a.pts||b.exact-a.exact);
+  const med=['&#129351;','&#129352;','&#129353;'];
+  document.getElementById('rankBody').innerHTML=totals.map((t,i)=>`<tr>
+    <td class="rpos">${med[i]||i+1}</td>
+    <td class="rnm">${t.name}</td>
+    <td class="rc">${t.exact}</td>
+    <td class="rc">${t.signs}</td>
+    <td class="rpt">${t.pts}</td>
+  </tr>`).join('');
+}
+
 function renderScorers(list){
   const el=document.getElementById('scorers');
   if(!list||!list.length){el.innerHTML='';return;}
-  const medals=['&#129351;','&#129352;','&#129353;'];
-  el.innerHTML=`<div class="slabel">&#9917; Maximos goleadores</div>`+
-    list.slice(0,3).map((s,i)=>`
-    <div class="match" style="gap:.65rem">
-      <span class="m-status s-done" style="font-size:1.1rem">${medals[i]}</span>
+  const med=['&#129351;','&#129352;','&#129353;'];
+  el.innerHTML='<div class="slabel">&#9917; Maximos goleadores</div>'+list.slice(0,3).map((s,i)=>`
+    <div class="match" style="gap:.6rem">
+      <span style="font-size:1.05rem">${med[i]}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:500">${s.name}</div>
-        <div style="font-size:.65rem;color:#6a8faa">${s.team}</div>
+        <div style="font-size:.8rem;font-weight:500">${s.name}</div>
+        <div style="font-size:.62rem;color:#6a8faa">${s.team}</div>
       </div>
       <div style="text-align:right">
-        <span style="font-size:1.25rem;font-weight:700;color:#c9a227">${s.goals}</span>
-        <span style="font-size:.6rem;color:#4a6a8a;display:block">goles</span>
+        <span style="font-size:1.2rem;font-weight:700;color:#c9a227">${s.goals}</span>
+        <span style="font-size:.58rem;color:#4a6a8a;display:block">goles</span>
       </div>
     </div>`).join('');
 }
 
-// ── ESPN API AUTO-UPDATE ──────────────────────────────
-const ESPN_BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+// ── ESPN ──────────────────────────────────────────────
+const BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 
-function normalizeName(n){
-  return n.toLowerCase()
-    .replace(/\./g,'').replace(/-/g,' ')
+function norm(n){
+  return n.toLowerCase().replace(/\./g,'').replace(/-/g,' ')
     .replace(/united states of america/,'usa').replace(/united states/,'usa')
-    .replace(/ivory coast|c.te d.ivoire/,'c. de marfil')
-    .replace(/netherlands/,'paises bajos')
-    .replace(/t.rkiye|turkey/,'turquia')
-    .replace(/south korea/,'corea del sur')
-    .replace(/dr congo|democratic republic of congo/,'rd congo')
-    .replace(/czech republic/,'rep. checa')
-    .replace(/cape verde/,'cabo verde')
-    .replace(/saudi arabia/,'arabia saudi')
-    .replace(/new zealand/,'nueva zelanda')
-    .replace(/[áàâä]/g,'a').replace(/[éèêë]/g,'e')
-    .replace(/[íìîï]/g,'i').replace(/[óòôö]/g,'o')
-    .replace(/[úùûü]/g,'u').trim();
+    .replace(/t.rkiye/,'turkey')
+    .replace(/c.te d.ivoire/,'ivory coast')
+    .replace(/[áàâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i')
+    .replace(/[óòôö]/g,'o').replace(/[úùûü]/g,'u').trim();
 }
 
 async function fetchScores(){
   try{
-    const r=await fetch(ESPN_BASE+'/scoreboard',{cache:'no-store'});
-    if(!r.ok)throw new Error();
+    const r=await fetch(BASE+'/scoreboard',{cache:'no-store'});
+    if(!r.ok)throw 0;
     const d=await r.json();
-    const liveMap={};
+    const map={};
     (d.events||[]).forEach(ev=>{
-      const comp=ev.competitions&&ev.competitions[0];
-      if(!comp)return;
-      const st=comp.status&&comp.status.type&&comp.status.type.name;
-      const home=comp.competitors.find(c=>c.homeAway==='home');
-      const away=comp.competitors.find(c=>c.homeAway==='away');
-      if(!home||!away)return;
-      const hn=normalizeName(home.team.displayName||'');
-      const an=normalizeName(away.team.displayName||'');
-      const status=st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre';
-      liveMap[hn+'|'+an]={status,homeScore:home.score||'0',awayScore:away.score||'0',clock:comp.status&&comp.status.displayClock};
+      const c=ev.competitions&&ev.competitions[0];if(!c)return;
+      const st=c.status&&c.status.type&&c.status.type.name;
+      const h=c.competitors.find(x=>x.homeAway==='home');
+      const a=c.competitors.find(x=>x.homeAway==='away');
+      if(!h||!a)return;
+      map[norm(h.team.displayName)+'|'+norm(a.team.displayName)]={
+        status:st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre',
+        hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock
+      };
     });
-    renderMatches(matches.map(m=>{
-      const hn=normalizeName(m.espnTeams[0]);
-      const an=normalizeName(m.espnTeams[1]);
-      return liveMap[hn+'|'+an]||liveMap[an+'|'+hn]||null;
-    }));
+    LIVE=MATCHES.map(m=>{
+      const k1=norm(m.eh)+'|'+norm(m.ea), k2=norm(m.ea)+'|'+norm(m.eh);
+      if(map[k1])return map[k1];
+      if(map[k2]){const x=map[k2];return{status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
+      return null;
+    });
+    renderMatches();renderPreds();renderRanking();
     document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  } catch(e){
-    document.getElementById('sync').textContent='Sin conexion — datos estaticos';
+  }catch(e){
+    document.getElementById('sync').textContent='Sin conexion — mostrando pronosticos';
   }
 }
 
 async function fetchScorers(){
   try{
-    // ESPN leaders endpoint for goals in the World Cup
-    const r=await fetch(ESPN_BASE+'/leaders',{cache:'no-store'});
-    if(!r.ok)throw new Error();
+    const r=await fetch(BASE+'/leaders',{cache:'no-store'});
+    if(!r.ok)return;
     const d=await r.json();
-    // Navigate ESPN leaders structure: categories -> leaders
     const cats=d.categories||[];
-    const goalCat=cats.find(c=>(c.name||'').toLowerCase().includes('goal')||
-                                (c.abbreviation||'').toLowerCase()==='g')||cats[0];
-    if(!goalCat)return;
-    const list=(goalCat.leaders||[]).slice(0,3).map(l=>({
-      name: l.athlete&&l.athlete.displayName||'—',
-      team: l.team&&l.team.displayName||'',
-      goals: l.value||0
+    const gc=cats.find(c=>(c.name||'').toLowerCase().includes('goal'))||cats[0];
+    if(!gc)return;
+    const list=(gc.leaders||[]).slice(0,3).map(l=>({
+      name:l.athlete&&l.athlete.displayName||'—',
+      team:l.team&&l.team.displayName||'',
+      goals:l.value||0
     }));
     if(list.length)renderScorers(list);
-  } catch(e){/* silently ignore — scorers div stays empty */}
+  }catch(e){}
 }
 
-async function refresh(){
-  await fetchScores();
-  await fetchScorers();
-}
+renderMatches();renderPreds();renderRanking();
+async function refresh(){await fetchScores();await fetchScorers();}
 refresh();
 setInterval(refresh,60000);
 </script>
