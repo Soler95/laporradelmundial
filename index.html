@@ -85,6 +85,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 
 <div id="partidos" class="page active">
   <div id="matchList"></div>
+  <div id="koList"></div>
   <div id="daily"></div>
   <div id="scorers"></div>
 </div>
@@ -128,6 +129,7 @@ function show(id,btn){
 }
 
 let LIVE=MATCHES.map(()=>null);
+let EVENTS=[];  // todos los eventos ESPN del torneo (incluye eliminatorias)
 let QUALIFIED={r32:null,r16:null,qf:null,sf:null,fin:null};
 let CHAMPION=null,THIRD=null,TOPSCORER=null,TOURNAMENT_DONE=false;
 
@@ -330,8 +332,9 @@ async function fetchScores(){
     const r=await fetch(BASE+'/scoreboard?dates=20260611-20260719&limit=200',{cache:'no-store'});
     if(!r.ok)throw 0;
     const d=await r.json();
+    EVENTS=d.events||[];
     const map={};
-    (d.events||[]).forEach(ev=>{
+    EVENTS.forEach(ev=>{
       const c=ev.competitions&&ev.competitions[0];if(!c)return;
       const st=c.status&&c.status.type&&c.status.type.name;
       const h=c.competitors.find(x=>x.homeAway==='home');
@@ -342,16 +345,9 @@ async function fetchScores(){
         hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
     });
     LIVE=MATCHES.map(m=>{
-    const newLive=MATCHES.map(m=>{
-      const k1=norm(m.eh)+'|'+norm(m.ea);
-      const k2=norm(m.ea)+'|'+norm(m.eh);
-
-      if(map[k1]) return map[k1];
-      if(map[k2]){
-        const x=map[k2];
-        return {status:x.status,hs:x.as,as:x.hs,clock:x.clock};
-      }
-
+      const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
+      if(map[k1])return map[k1];
+      if(map[k2]){const x=map[k2];return{status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
       return null;
     });
     document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
@@ -360,13 +356,26 @@ async function fetchScores(){
   }
 }
 
-async function fetchRound(key){
-  try{
-    const[d1,d2]=ROUNDS[key];
-    const r=await fetch(`${BASE}/scoreboard?dates=${d1}-${d2}`,{cache:'no-store'});
-    if(!r.ok)return;
-    const d=await r.json();
-    const evs=d.events||[];
+// ── ELIMINATORIAS (desde EVENTS, sin llamadas extra) ──
+const KO_ROUNDS=[
+  {key:'r32',label:'16avos de final',d1:'20260628',d2:'20260703',pts:3},
+  {key:'r16',label:'Octavos de final',d1:'20260704',d2:'20260707',pts:5},
+  {key:'qf',label:'Cuartos de final',d1:'20260709',d2:'20260711',pts:8},
+  {key:'sf',label:'Semifinales',d1:'20260714',d2:'20260715',pts:12},
+  {key:'third',label:'3er y 4o puesto',d1:'20260718',d2:'20260718',pts:0},
+  {key:'fin',label:'&#127942; FINAL',d1:'20260719',d2:'20260719',pts:16}
+];
+// bandera por nombre ingles normalizado (derivada de los datos de grupos)
+const EN_FLAG={};
+MATCHES.forEach(m=>{EN_FLAG[norm(m.eh)]=m.hf;EN_FLAG[norm(m.ea)]=m.af;});
+const EN_ES={};
+Object.entries(ES2EN).forEach(([es,en])=>{EN_ES[norm(en)]=es;});
+
+function evDate(ev){return (ev.date||'').slice(0,10).replace(/-/g,'');}
+
+function processKnockouts(){
+  KO_ROUNDS.forEach(rd=>{
+    const evs=EVENTS.filter(ev=>{const d=evDate(ev);return d>=rd.d1&&d<=rd.d2;});
     if(!evs.length)return;
     const teams=new Set();
     let lastWinner=null,allDone=true;
@@ -374,20 +383,62 @@ async function fetchRound(key){
       const c=ev.competitions&&ev.competitions[0];if(!c)return;
       const st=c.status&&c.status.type&&c.status.type.name;
       if(st!=='STATUS_FINAL')allDone=false;
-      c.competitors.forEach(x=>{
+      (c.competitors||[]).forEach(x=>{
         teams.add(norm(x.team.displayName));
         if(st==='STATUS_FINAL'&&x.winner)lastWinner=norm(x.team.displayName);
       });
     });
-    if(key==='fin'){
+    if(rd.key==='fin'){
       QUALIFIED.fin=teams;
       if(allDone&&lastWinner){CHAMPION=lastWinner;TOURNAMENT_DONE=true;}
-    }else if(key==='third'){
+    }else if(rd.key==='third'){
       if(allDone&&lastWinner)THIRD=lastWinner;
     }else{
-      QUALIFIED[key]=teams;
+      QUALIFIED[rd.key]=teams;
     }
-  }catch(e){}
+  });
+}
+
+function renderKnockouts(){
+  let html='<div class="slabel" style="margin-top:1.4rem">&#9889; ELIMINATORIAS</div>';
+  KO_ROUNDS.forEach(rd=>{
+    const evs=EVENTS.filter(ev=>{const d=evDate(ev);return d>=rd.d1&&d<=rd.d2;})
+      .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const dd1=rd.d1.slice(6)+'/'+rd.d1.slice(4,6).replace(/^0/,''),
+          dd2=rd.d2.slice(6)+'/'+rd.d2.slice(4,6).replace(/^0/,'');
+    const range=rd.d1===rd.d2?dd1:dd1+' — '+dd2;
+    html+=`<div class="slabel">${rd.label} <span style="color:#3a5a7a;font-weight:400">· ${range}${rd.pts?` · +${rd.pts}/equipo`:''}</span></div>`;
+    if(!evs.length){
+      html+=`<div class="match"><span class="m-status s-soon">${dd1}</span>
+        <div class="m-teams"><span style="font-size:.7rem;color:#3a5a7a">Equipos por definir — aparecerán automáticamente</span></div></div>`;
+      return;
+    }
+    evs.forEach(ev=>{
+      const c=ev.competitions&&ev.competitions[0];if(!c)return;
+      const st=c.status&&c.status.type&&c.status.type.name;
+      const h=(c.competitors||[]).find(x=>x.homeAway==='home');
+      const a=(c.competitors||[]).find(x=>x.homeAway==='away');
+      if(!h||!a)return;
+      const hn=norm(h.team.displayName),an=norm(a.team.displayName);
+      const hesp=EN_ES[hn]||h.team.displayName,aesp=EN_ES[an]||a.team.displayName;
+      const hf=EN_FLAG[hn]||'&#9917;',af=EN_FLAG[an]||'&#9917;';
+      const dt=new Date(ev.date);
+      let sc='s-soon',st2=dt.getDate()+' '+(dt.getMonth()===5?'Jun':'Jul'),isL=false,ls='&#183;',vs='&#183;',cl='';
+      if(st==='STATUS_IN_PROGRESS'){sc='s-live';st2='EN VIVO<br>'+((c.status&&c.status.displayClock)||'');isL=true;ls=h.score||'0';vs=a.score||'0';cl=' updated';}
+      else if(st==='STATUS_FINAL'){sc='s-done';st2='FIN';ls=h.score||'0';vs=a.score||'0';cl=' updated';}
+      const hw=st==='STATUS_FINAL'&&h.winner?' style="color:#6fdc6f"':'';
+      const aw=st==='STATUS_FINAL'&&a.winner?' style="color:#6fdc6f"':'';
+      html+=`<div class="match${isL?' live':''}">
+        <span class="m-status ${sc}">${st2}</span>
+        <div class="m-teams">
+          <span class="m-team right"${hw}>${hf} ${hesp}</span>
+          <div class="m-score"><span class="sc${cl}">${ls}</span><span class="sep">-</span><span class="sc${cl}">${vs}</span></div>
+          <span class="m-team"${aw}>${af} ${aesp}</span>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('koList').innerHTML=html;
 }
 
 async function fetchScorers(){
