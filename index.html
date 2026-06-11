@@ -69,8 +69,8 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 
 <header>
   <div>
-    <h1>&#9917; Mundial 2026 — KUADRI</h1>
-    <p>11 Jun &rarr; 19 Jul · 15 quinielistas</p>
+    <h1>⚽ Mundial 2026 — KUADRI</h1>
+    <p>11 Jun → 19 Jul · 15 quinielistas</p>
     <div id="sync">Cargando...</div>
   </div>
   <div style="text-align:right;font-size:.6rem;color:#4a6a8a">Auto-actualiza<br>cada 60s</div>
@@ -80,7 +80,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <button class="active" onclick="show('partidos',this)">Partidos</button>
   <button onclick="show('pronos',this)">Pronosticos</button>
   <button onclick="show('apuestas',this)">Apuestas</button>
-  <button onclick="show('ranking',this)">&#127942; Ranking</button>
+  <button onclick="show('ranking',this)">🏆 Ranking</button>
 </nav>
 
 <div id="partidos" class="page active">
@@ -102,7 +102,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 <div id="apuestas" class="page">
   <select id="playerSel" onchange="renderBets()"></select>
   <div id="betList"></div>
-  <div class="note">Bonus: equipo en 16avos +3 · octavos +5 · cuartos +8 · semis +12 · final +16 · Campeon +20 · 3er puesto +8 · Bota de Oro +10 · Balon de Oro +5.</div>
+  <div class="note">Bonus: 16avos +3 · octavos +5 · cuartos +8 · semis +12 · final +16 · Campeon +20 · 3er puesto +8 · Bota de Oro +10 · Balon de Oro +5.</div>
 </div>
 
 <div id="ranking" class="page">
@@ -110,7 +110,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
     <thead><tr><th>#</th><th>Quinielista</th><th class="rc">Exact</th><th class="rc">Signo</th><th class="rc">Bonus</th><th style="text-align:right">Pts</th></tr></thead>
     <tbody id="rankBody"></tbody>
   </table>
-  <div class="note">Partidos: signo = 1 pt · exacto = +3 pts. Bonus por clasificados, campeon, 3er puesto y premios. Se recalcula en vivo cada 60 segundos.</div>
+  <div class="note">Partidos: signo = 1 pt · exacto = +3 pts. Bonus por clasificados y premios. Se recalcula en vivo. Los resultados finalizados quedan guardados en el navegador.</div>
 </div>
 
 <script>
@@ -118,7 +118,14 @@ const DATA={"players": ["Iñigo Z", "Berjano", "Ander", "Soler", "Olague", "Giac
 const PLAYERS=DATA.players, MATCHES=DATA.matches, PICKS=DATA.picks, ES2EN=DATA.es2en;
 const MANUAL_AWARDS={bota:'',balon:'',campeon:'',tercero:''};
 const BONUS={r32:3,r16:5,qf:8,sf:12,fin:16,champ:20,third:8,bota:10,balon:5};
-const ROUNDS={r32:['20260628','20260703'],r16:['20260704','20260707'],qf:['20260709','20260711'],sf:['20260714','20260715'],third:['20260718','20260718'],fin:['20260719','20260719']};
+const KO_ROUNDS=[
+  {key:'r32',label:'16avos de final',d1:'20260628',d2:'20260703',pts:3},
+  {key:'r16',label:'Octavos de final',d1:'20260704',d2:'20260707',pts:5},
+  {key:'qf',label:'Cuartos de final',d1:'20260709',d2:'20260711',pts:8},
+  {key:'sf',label:'Semifinales',d1:'20260714',d2:'20260715',pts:12},
+  {key:'third',label:'3er y 4o puesto',d1:'20260718',d2:'20260718',pts:0},
+  {key:'fin',label:'🏆 FINAL',d1:'20260719',d2:'20260719',pts:16}
+];
 const DIAS=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
 
 function show(id,btn){
@@ -128,10 +135,15 @@ function show(id,btn){
   btn.classList.add('active');
 }
 
+// ── PERSISTENCIA ─────────────────────────────────────
+let SAVED={results:{},ko:{},topscorer:null};
+try{const s=localStorage.getItem('kuadri2026');if(s)SAVED=Object.assign(SAVED,JSON.parse(s));}catch(e){}
+function persist(){try{localStorage.setItem('kuadri2026',JSON.stringify(SAVED));}catch(e){}}
+
 let LIVE=MATCHES.map(()=>null);
-let EVENTS=[];  // todos los eventos ESPN del torneo (incluye eliminatorias)
+let KO_EVENTS={};
 let QUALIFIED={r32:null,r16:null,qf:null,sf:null,fin:null};
-let CHAMPION=null,THIRD=null,TOPSCORER=null,TOURNAMENT_DONE=false;
+let CHAMPION=null,THIRD=null,TOPSCORER=SAVED.topscorer,TOURNAMENT_DONE=false;
 
 function norm(n){
   return (n||'').toLowerCase().replace(/\./g,'').replace(/-/g,' ')
@@ -154,15 +166,16 @@ function pointsFor(pred,hs,as){
   return p;
 }
 
-// day-ordered index list for pronos tab
 const DAY_ORDER=MATCHES.map((m,i)=>i).sort((a,b)=>MATCHES[a].iso<MATCHES[b].iso?-1:MATCHES[a].iso>MATCHES[b].iso?1:0);
-
 function fmtDay(iso){
   const d=new Date(iso+'T12:00:00');
   return DIAS[d.getDay()].charAt(0).toUpperCase()+DIAS[d.getDay()].slice(1)+' '+d.getDate()+' de '+(d.getMonth()===5?'junio':'julio');
 }
+const EN_FLAG={};
+MATCHES.forEach(m=>{EN_FLAG[norm(m.eh)]=m.hf;EN_FLAG[norm(m.ea)]=m.af;});
+const EN_ES={};
+Object.entries(ES2EN).forEach(([es,en])=>{EN_ES[norm(en)]=es;});
 
-// ── PARTIDOS (por grupo) ─────────────────────────────
 function renderMatches(){
   let html='',curG='';
   MATCHES.forEach((m,i)=>{
@@ -185,9 +198,64 @@ function renderMatches(){
   document.getElementById('matchList').innerHTML=html;
 }
 
-// ── PUNTOS DEL DIA (debajo de partidos) ──────────────
+function processKnockouts(){
+  KO_ROUNDS.forEach(rd=>{
+    const evs=Object.values(KO_EVENTS).filter(e=>e.date>=rd.d1&&e.date<=rd.d2);
+    if(!evs.length)return;
+    const teams=new Set();
+    let lastWinner=null,allDone=true;
+    evs.forEach(e=>{
+      teams.add(e.h);teams.add(e.a);
+      if(e.status!=='post')allDone=false;
+      else if(e.winner)lastWinner=e.winner;
+    });
+    if(rd.key==='fin'){
+      QUALIFIED.fin=teams;
+      if(allDone&&lastWinner){CHAMPION=lastWinner;TOURNAMENT_DONE=true;}
+    }else if(rd.key==='third'){
+      if(allDone&&lastWinner)THIRD=lastWinner;
+    }else{
+      QUALIFIED[rd.key]=teams;
+    }
+  });
+}
+
+function renderKnockouts(){
+  let html='<div class="slabel" style="margin-top:1.4rem">⚡ ELIMINATORIAS</div>';
+  KO_ROUNDS.forEach(rd=>{
+    const evs=Object.values(KO_EVENTS).filter(e=>e.date>=rd.d1&&e.date<=rd.d2)
+      .sort((a,b)=>a.date.localeCompare(b.date));
+    const dd1=parseInt(rd.d1.slice(6))+'/'+parseInt(rd.d1.slice(4,6));
+    const dd2=parseInt(rd.d2.slice(6))+'/'+parseInt(rd.d2.slice(4,6));
+    const range=rd.d1===rd.d2?dd1:dd1+' — '+dd2;
+    html+=`<div class="slabel">${rd.label} <span style="color:#3a5a7a;font-weight:400">· ${range}${rd.pts?` · +${rd.pts}/equipo`:''}</span></div>`;
+    if(!evs.length){
+      html+=`<div class="match"><span class="m-status s-soon">${dd1}</span>
+        <div class="m-teams"><span style="font-size:.7rem;color:#3a5a7a">Equipos por definir — aparecerán automáticamente</span></div></div>`;
+      return;
+    }
+    evs.forEach(e=>{
+      const hes=EN_ES[e.h]||e.h,aes=EN_ES[e.a]||e.a;
+      const hf=EN_FLAG[e.h]||'⚽',af=EN_FLAG[e.a]||'⚽';
+      let sc='s-soon',st2=parseInt(e.date.slice(6))+' '+(e.date.slice(4,6)==='06'?'Jun':'Jul'),isL=false,ls='·',vs='·',cl='';
+      if(e.status==='in'){sc='s-live';st2='EN VIVO<br>'+(e.clock||'');isL=true;ls=e.hs;vs=e.as;cl=' updated';}
+      else if(e.status==='post'){sc='s-done';st2='FIN';ls=e.hs;vs=e.as;cl=' updated';}
+      const hw=e.status==='post'&&e.winner===e.h?' style="color:#6fdc6f"':'';
+      const aw=e.status==='post'&&e.winner===e.a?' style="color:#6fdc6f"':'';
+      html+=`<div class="match${isL?' live':''}">
+        <span class="m-status ${sc}">${st2}</span>
+        <div class="m-teams">
+          <span class="m-team right"${hw}>${hf} ${hes}</span>
+          <div class="m-score"><span class="sc${cl}">${ls}</span><span class="sep">-</span><span class="sc${cl}">${vs}</span></div>
+          <span class="m-team"${aw}>${af} ${aes}</span>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('koList').innerHTML=html;
+}
+
 function renderDaily(){
-  // most recent day with at least one finished or live match
   let day=null;
   DAY_ORDER.forEach(i=>{
     const lv=LIVE[i];
@@ -207,17 +275,16 @@ function renderDaily(){
     return{name:p,pts};
   }).sort((a,b)=>b.pts-a.pts);
   el.innerHTML=`<div class="daily">
-    <div class="daily-h">&#128200; Puntos del dia — ${fmtDay(day)}</div>
+    <div class="daily-h">📈 Puntos del dia — ${fmtDay(day)}</div>
     <table>${rows.map(r=>`<tr><td>${r.name}</td><td class="${r.pts?'dp':'dz'}">${r.pts?'+'+r.pts:'0'}</td></tr>`).join('')}</table>
   </div>`;
 }
 
-// ── PRONOSTICOS (por dia) ────────────────────────────
 function renderPreds(){
   let html='',curDay='';
   DAY_ORDER.forEach(i=>{
     const m=MATCHES[i];
-    if(m.iso!==curDay){html+=`<div class="slabel">&#128197; ${fmtDay(m.iso)}</div>`;curDay=m.iso;}
+    if(m.iso!==curDay){html+=`<div class="slabel">📅 ${fmtDay(m.iso)}</div>`;curDay=m.iso;}
     const lv=LIVE[i];
     const act=lv&&(lv.status==='post'||lv.status==='in');
     const resTxt=act?`${lv.hs}-${lv.as}${lv.status==='in'?' ⏱':''}`:'Grupo '+m.g;
@@ -236,7 +303,6 @@ function renderPreds(){
   document.getElementById('predList').innerHTML=html;
 }
 
-// ── APUESTAS ─────────────────────────────────────────
 function tagClass(teamEs,roundKey){
   if(roundKey==='champ'){if(!CHAMPION)return '';return teamEn(teamEs)===CHAMPION?' ok':' ko';}
   if(roundKey==='third'){if(!THIRD)return '';return teamEn(teamEs)===THIRD?' ok':' ko';}
@@ -274,7 +340,6 @@ function renderBets(){
   document.getElementById('betList').innerHTML=html;
 }
 
-// ── RANKING ──────────────────────────────────────────
 function bonusPoints(j){
   let pts=0;
   for(const[key,val]of[['r32',BONUS.r32],['r16',BONUS.r16],['qf',BONUS.qf],['sf',BONUS.sf],['fin',BONUS.fin]]){
@@ -305,7 +370,7 @@ function renderRanking(){
     return{name:p,ex,sg,bn,pts:pts+bn};
   });
   rows.sort((a,b)=>b.pts-a.pts||b.ex-a.ex);
-  const med=['&#129351;','&#129352;','&#129353;'];
+  const med=['🥇','🥈','🥉'];
   document.getElementById('rankBody').innerHTML=rows.map((t,i)=>`<tr>
     <td class="rpos">${med[i]||i+1}</td><td class="rnm">${t.name}</td>
     <td class="rc">${t.ex}</td><td class="rc">${t.sg}</td><td class="rc">${t.bn}</td>
@@ -315,8 +380,8 @@ function renderRanking(){
 function renderScorers(list){
   const el=document.getElementById('scorers');
   if(!list||!list.length){el.innerHTML='';return;}
-  const med=['&#129351;','&#129352;','&#129353;'];
-  el.innerHTML='<div class="slabel">&#9917; Maximos goleadores</div>'+list.slice(0,3).map((s,i)=>`
+  const med=['🥇','🥈','🥉'];
+  el.innerHTML='<div class="slabel">⚽ Maximos goleadores</div>'+list.slice(0,3).map((s,i)=>`
     <div class="match" style="gap:.6rem"><span style="font-size:1.05rem">${med[i]}</span>
       <div style="flex:1;min-width:0"><div style="font-size:.8rem;font-weight:500">${s.name}</div>
       <div style="font-size:.62rem;color:#6a8faa">${s.team}</div></div>
@@ -324,121 +389,47 @@ function renderScorers(list){
       <span style="font-size:.56rem;color:#4a6a8a;display:block">goles</span></div></div>`).join('');
 }
 
-// ── ESPN ──────────────────────────────────────────────
 const BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 
 async function fetchScores(){
+  let map={};
   try{
-    const r=await fetch(BASE+'/scoreboard?dates=20260611-20260719&limit=200',{cache:'no-store'});
+    const r=await fetch(BASE+'/scoreboard?dates=20260611-20260719&limit=400',{cache:'no-store'});
     if(!r.ok)throw 0;
     const d=await r.json();
-    EVENTS=d.events||[];
-    const map={};
-    EVENTS.forEach(ev=>{
-      const c=ev.competitions&&ev.competitions[0];if(!c)return;
-      const st=c.status&&c.status.type&&c.status.type.name;
-      const h=c.competitors.find(x=>x.homeAway==='home');
-      const a=c.competitors.find(x=>x.homeAway==='away');
-      if(!h||!a)return;
-      map[norm(h.team.displayName)+'|'+norm(a.team.displayName)]={
-        status:st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre',
-        hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
-    });
-    LIVE=MATCHES.map(m=>{
-      const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
-      if(map[k1])return map[k1];
-      if(map[k2]){const x=map[k2];return{status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
-      return null;
-    });
-    document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    document.getElementById('sync').textContent='Sin conexion';
-  }
-}
-
-// ── ELIMINATORIAS (desde EVENTS, sin llamadas extra) ──
-const KO_ROUNDS=[
-  {key:'r32',label:'16avos de final',d1:'20260628',d2:'20260703',pts:3},
-  {key:'r16',label:'Octavos de final',d1:'20260704',d2:'20260707',pts:5},
-  {key:'qf',label:'Cuartos de final',d1:'20260709',d2:'20260711',pts:8},
-  {key:'sf',label:'Semifinales',d1:'20260714',d2:'20260715',pts:12},
-  {key:'third',label:'3er y 4o puesto',d1:'20260718',d2:'20260718',pts:0},
-  {key:'fin',label:'&#127942; FINAL',d1:'20260719',d2:'20260719',pts:16}
-];
-// bandera por nombre ingles normalizado (derivada de los datos de grupos)
-const EN_FLAG={};
-MATCHES.forEach(m=>{EN_FLAG[norm(m.eh)]=m.hf;EN_FLAG[norm(m.ea)]=m.af;});
-const EN_ES={};
-Object.entries(ES2EN).forEach(([es,en])=>{EN_ES[norm(en)]=es;});
-
-function evDate(ev){return (ev.date||'').slice(0,10).replace(/-/g,'');}
-
-function processKnockouts(){
-  KO_ROUNDS.forEach(rd=>{
-    const evs=EVENTS.filter(ev=>{const d=evDate(ev);return d>=rd.d1&&d<=rd.d2;});
-    if(!evs.length)return;
-    const teams=new Set();
-    let lastWinner=null,allDone=true;
-    evs.forEach(ev=>{
-      const c=ev.competitions&&ev.competitions[0];if(!c)return;
-      const st=c.status&&c.status.type&&c.status.type.name;
-      if(st!=='STATUS_FINAL')allDone=false;
-      (c.competitors||[]).forEach(x=>{
-        teams.add(norm(x.team.displayName));
-        if(st==='STATUS_FINAL'&&x.winner)lastWinner=norm(x.team.displayName);
-      });
-    });
-    if(rd.key==='fin'){
-      QUALIFIED.fin=teams;
-      if(allDone&&lastWinner){CHAMPION=lastWinner;TOURNAMENT_DONE=true;}
-    }else if(rd.key==='third'){
-      if(allDone&&lastWinner)THIRD=lastWinner;
-    }else{
-      QUALIFIED[rd.key]=teams;
-    }
-  });
-}
-
-function renderKnockouts(){
-  let html='<div class="slabel" style="margin-top:1.4rem">&#9889; ELIMINATORIAS</div>';
-  KO_ROUNDS.forEach(rd=>{
-    const evs=EVENTS.filter(ev=>{const d=evDate(ev);return d>=rd.d1&&d<=rd.d2;})
-      .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    const dd1=rd.d1.slice(6)+'/'+rd.d1.slice(4,6).replace(/^0/,''),
-          dd2=rd.d2.slice(6)+'/'+rd.d2.slice(4,6).replace(/^0/,'');
-    const range=rd.d1===rd.d2?dd1:dd1+' — '+dd2;
-    html+=`<div class="slabel">${rd.label} <span style="color:#3a5a7a;font-weight:400">· ${range}${rd.pts?` · +${rd.pts}/equipo`:''}</span></div>`;
-    if(!evs.length){
-      html+=`<div class="match"><span class="m-status s-soon">${dd1}</span>
-        <div class="m-teams"><span style="font-size:.7rem;color:#3a5a7a">Equipos por definir — aparecerán automáticamente</span></div></div>`;
-      return;
-    }
-    evs.forEach(ev=>{
+    (d.events||[]).forEach(ev=>{
       const c=ev.competitions&&ev.competitions[0];if(!c)return;
       const st=c.status&&c.status.type&&c.status.type.name;
       const h=(c.competitors||[]).find(x=>x.homeAway==='home');
       const a=(c.competitors||[]).find(x=>x.homeAway==='away');
       if(!h||!a)return;
       const hn=norm(h.team.displayName),an=norm(a.team.displayName);
-      const hesp=EN_ES[hn]||h.team.displayName,aesp=EN_ES[an]||a.team.displayName;
-      const hf=EN_FLAG[hn]||'&#9917;',af=EN_FLAG[an]||'&#9917;';
-      const dt=new Date(ev.date);
-      let sc='s-soon',st2=dt.getDate()+' '+(dt.getMonth()===5?'Jun':'Jul'),isL=false,ls='&#183;',vs='&#183;',cl='';
-      if(st==='STATUS_IN_PROGRESS'){sc='s-live';st2='EN VIVO<br>'+((c.status&&c.status.displayClock)||'');isL=true;ls=h.score||'0';vs=a.score||'0';cl=' updated';}
-      else if(st==='STATUS_FINAL'){sc='s-done';st2='FIN';ls=h.score||'0';vs=a.score||'0';cl=' updated';}
-      const hw=st==='STATUS_FINAL'&&h.winner?' style="color:#6fdc6f"':'';
-      const aw=st==='STATUS_FINAL'&&a.winner?' style="color:#6fdc6f"':'';
-      html+=`<div class="match${isL?' live':''}">
-        <span class="m-status ${sc}">${st2}</span>
-        <div class="m-teams">
-          <span class="m-team right"${hw}>${hf} ${hesp}</span>
-          <div class="m-score"><span class="sc${cl}">${ls}</span><span class="sep">-</span><span class="sc${cl}">${vs}</span></div>
-          <span class="m-team"${aw}>${af} ${aesp}</span>
-        </div>
-      </div>`;
+      const status=st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre';
+      const rec={status,hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
+      map[hn+'|'+an]=rec;
+      const evd=(ev.date||'').slice(0,10).replace(/-/g,'');
+      if(evd>='20260628'){
+        const winner=h.winner?hn:a.winner?an:null;
+        const ko={date:evd,h:hn,a:an,hs:rec.hs,as:rec.as,status,clock:rec.clock,winner:status==='post'?winner:null};
+        KO_EVENTS[evd+'|'+hn+'|'+an]=ko;
+        if(status==='post'){SAVED.ko[evd+'|'+hn+'|'+an]=ko;}
+      }
     });
+    document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    document.getElementById('sync').textContent='Sin conexion — usando resultados guardados';
+  }
+  Object.entries(SAVED.ko||{}).forEach(([k,v])=>{if(!KO_EVENTS[k])KO_EVENTS[k]=v;});
+  LIVE=MATCHES.map((m,i)=>{
+    const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
+    let rec=null;
+    if(map[k1])rec=map[k1];
+    else if(map[k2]){const x=map[k2];rec={status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
+    if(rec&&rec.status==='post'){SAVED.results[i]={hs:rec.hs,as:rec.as};}
+    if(!rec&&SAVED.results[i]){rec={status:'post',hs:SAVED.results[i].hs,as:SAVED.results[i].as};}
+    return rec;
   });
-  document.getElementById('koList').innerHTML=html;
+  persist();
 }
 
 async function fetchScorers(){
@@ -452,7 +443,7 @@ async function fetchScorers(){
     const list=(gc.leaders||[]).slice(0,3).map(l=>({
       name:l.athlete&&l.athlete.displayName||'—',
       team:l.team&&l.team.displayName||'',goals:l.value||0}));
-    if(list.length){renderScorers(list);TOPSCORER=list[0].name;}
+    if(list.length){renderScorers(list);TOPSCORER=list[0].name;SAVED.topscorer=TOPSCORER;persist();}
   }catch(e){}
 }
 
@@ -462,16 +453,13 @@ function initSel(){
 
 async function refresh(){
   await fetchScores();
-  const today=new Date().toISOString().slice(0,10).replace(/-/g,'');
-  for(const key of Object.keys(ROUNDS)){
-    if(today>=ROUNDS[key][0])await fetchRound(key);
-  }
+  processKnockouts();
   await fetchScorers();
-  renderMatches();renderDaily();renderPreds();renderBets();renderRanking();
+  renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();
 }
 
 initSel();
-renderMatches();renderDaily();renderPreds();renderBets();renderRanking();
+renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();
 refresh();
 setInterval(refresh,60000);
 </script>
