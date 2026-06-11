@@ -467,6 +467,7 @@ async function fetchScores(){
     }catch(e){}
   }
   Object.entries(SAVED.ko||{}).forEach(([k,v])=>{if(!KO_EVENTS[k])KO_EVENTS[k]=v;});
+  const prev=LIVE;
   LIVE=MATCHES.map((m,i)=>{
     const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
     let rec=null;
@@ -474,6 +475,8 @@ async function fetchScores(){
     else if(map[k2]){const x=map[k2];rec={status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
     if(rec&&rec.status==='post'){SAVED.results[i]={hs:rec.hs,as:rec.as};}
     if(!rec&&SAVED.results[i]){rec={status:'post',hs:SAVED.results[i].hs,as:SAVED.results[i].as};}
+    // anti-parpadeo: si la API omite un partido que estaba en juego o acabado, conserva el dato anterior
+    if(!rec&&prev[i]&&(prev[i].status==='in'||prev[i].status==='post'))rec=prev[i];
     return rec;
   });
   persist();
