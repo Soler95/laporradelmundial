@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mundial 2026 — KUADRI</title>
+<title>Mundial 2026 — Porra</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:system-ui,-apple-system,sans-serif;background:#0a1628;color:#e8edf5;min-height:100vh}
@@ -78,7 +78,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 
 <header>
   <div>
-    <h1>⚽ Mundial 2026 — KUADRI</h1>
+    <h1>⚽ Mundial 2026 — Porra</h1>
     <p>11 Jun → 19 Jul · 15 quinielistas</p>
     <div id="sync">Cargando...</div>
   </div>
@@ -89,7 +89,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <button class="active" onclick="show('partidos',this)">Partidos</button>
   <button onclick="show('pronos',this)">Pronosticos</button>
   <button onclick="show('apuestas',this)">Apuestas</button>
-  <button onclick="show('noticias',this)">📰 KUADRI News</button>
+  <button onclick="show('noticias',this)">📰 Porra News</button>
   <button onclick="show('ranking',this)">🏆 Ranking</button>
 </nav>
 
@@ -117,7 +117,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 
 <div id="noticias" class="page">
   <div id="newsList"></div>
-  <div class="note">📰 KUADRI News — periodismo de máxima rigurosidad. Las noticias se generan automáticamente con cada resultado.</div>
+  <div class="note">📰 Porra News — periodismo de máxima rigurosidad. Las noticias se generan automáticamente con cada resultado.</div>
 </div>
 
 <div id="ranking" class="page">
@@ -405,7 +405,7 @@ function renderRanking(){
     <td class="rpt">${t.pts}</td></tr>`).join('');
 }
 
-// ── KUADRI NEWS ──────────────────────────────────────
+// ── Porra NEWS ──────────────────────────────────────
 function h32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h);}
 function pick(arr,seed){return arr[h32(seed)%arr.length];}
 function lista(names){
@@ -416,12 +416,26 @@ function lista(names){
 
 function buildNews(){
   const items=[];
-  // datos por partido terminado, en orden cronologico
   const finished=[];
   DAY_ORDER.forEach(i=>{
     const lv=LIVE[i];
     if(lv&&lv.status==='post')finished.push(i);
   });
+
+  // racha de pifias: dias consecutivos (con partidos) que un jugador lleva a cero
+  function rachaCeros(j,uptoDay){
+    const days=[...new Set(finished.map(i=>MATCHES[i].iso))].filter(d=>d<=uptoDay).sort();
+    let r=0;
+    for(let k=days.length-1;k>=0;k--){
+      const idxs=finished.filter(i=>MATCHES[i].iso===days[k]);
+      const pts=idxs.reduce((s,i)=>{
+        const lv=LIVE[i];
+        return s+(pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0);
+      },0);
+      if(pts===0)r++;else break;
+    }
+    return r;
+  }
 
   finished.forEach(i=>{
     const m=MATCHES[i],lv=LIVE[i];
@@ -435,7 +449,10 @@ function buildNews(){
       if(pts>=4)ex.push(p);else if(pts>=1)sg.push(p);else fl.push(p);
     });
     const ganador=hs>as?m.home:as>hs?m.away:null;
+    const goleada=Math.abs(hs-as)>=3;
     const meta=`${m.home} ${res} ${m.away} · ${fmtDay(m.iso)}`;
+    const pringao=fl.length?pick(fl,seed+'pr'):null;
+    const pringao2=fl.length>1?pick(fl.filter(x=>x!==pringao),seed+'pr2'):null;
 
     if(ex.length===1){
       items.push({c:'breaking',m:meta,
@@ -444,54 +461,109 @@ function buildNews(){
           `${ex[0]} predice el ${res} exacto y ya se pasea por el grupo como si hubiera ganado el Mundial él solo`,
           `EXCLUSIVA: ${ex[0]} tenía un primo en el vestuario. Es la única explicación al ${res} que clavó`,
           `${ex[0]} acierta el resultado exacto y pide que a partir de ahora se le llame "El Oráculo"`,
+          `Un mono lanzando dardos habría tardado menos, pero ${ex[0]} ha clavado el ${res} y eso que cuenta`,
+          `${ex[0]} clava el ${res} y demuestra que hasta un reloj parado da la hora bien dos veces al día`,
+          `Conmoción en la Porra: ${ex[0]} acierta algo. Los forenses estudian el caso`,
         ],seed+'e1'),
         b:pick([
           `Mientras tanto, ${lista(fl.slice(0,3))||'el resto'} siguen buscando el partido que vieron ellos, porque el que pusieron en la quiniela desde luego no era este.`,
           `Los otros ${14-sg.length} quinielistas han pedido que se revise el VAR de la quiniela. No hay nada que revisar: son malísimos.`,
-          `Fuentes del KUADRI confirman que ${ex[0]} lleva toda la semana insoportable. Y lo que queda.`,
+          `Fuentes de la Porra confirman que ${ex[0]} lleva toda la semana insoportable. Y lo que queda.`,
+          `${pringao?pringao+' declaró que "el fútbol son estados de ánimo". Su estado de ánimo: cero puntos.':'El resto del grupo, en silencio. Un silencio de cero puntos.'}`,
+          `Comparativa odiosa del día: ${ex[0]} suma 4 puntos en 90 minutos. ${pringao||'Otros'} lleva${pringao?'':'n'} el mismo tiempo viendo el fútbol y aún no sabe${pringao?'':'n'} ni cómo se cuenta un gol.`,
         ],seed+'e2')});
     } else if(ex.length>1){
       items.push({c:'breaking',m:meta,
-        t:`${lista(ex)} clavan el ${res} y forman el nuevo club de listillos del KUADRI`,
-        b:`Cuatro puntazos por cabeza. El resto del grupo estudia denunciar el partido por amañado, porque reconocer que ${lista(ex)} saben más que ellos no es una opción.`});
+        t:pick([
+          `${lista(ex)} clavan el ${res} y forman el nuevo club de listillos de la Porra`,
+          `${lista(ex)} aciertan el exacto a la vez. O son genios o se copian. Apostamos por lo segundo`,
+          `El ${res} cae del lado de ${lista(ex)}, que ya negocian sus derechos de imagen`,
+        ],seed+'me1'),
+        b:pick([
+          `Cuatro puntazos por cabeza. El resto del grupo estudia denunciar el partido por amañado, porque reconocer que ${lista(ex)} saben más que ellos no es una opción.`,
+          `${pringao?'Especialmente doloroso para '+pringao+', que vio el mismo partido, vive en el mismo planeta y aun así puso lo que puso.':'El resto, a llorar a la lloreria.'}`,
+        ],seed+'me2')});
     } else if(sg.length===0){
       items.push({c:'breaking',m:meta,
         t:pick([
-          `CATÁSTROFE NACIONAL: los 15 cerebros del KUADRI fallan el ${m.home}–${m.away}. Ni uno. Cero.`,
-          `El ${m.home}–${m.away} acaba ${res} y deja al KUADRI en ridículo internacional: 15 pronósticos, 15 desastres`,
+          `CATÁSTROFE NACIONAL: los 15 cerebros de la Porra fallan el ${m.home}–${m.away}. Ni uno. Cero.`,
+          `El ${m.home}–${m.away} acaba ${res} y deja a la Porra en ridículo internacional: 15 pronósticos, 15 desastres`,
+          `15 adultos funcionales (en teoría) y ninguno acierta ni el signo del ${m.home}–${m.away}. Para estudio científico`,
         ],seed+'f1'),
-        b:`Quince personas. Quince. Y ninguna se acercó ni de casualidad. Los expertos recomiendan que el año que viene apostéis a piedra, papel o tijera, que ahí al menos hay un 33% de posibilidades.`});
+        b:pick([
+          `Quince personas. Quince. Y ninguna se acercó ni de casualidad. Los expertos recomiendan que el año que viene apostéis a piedra, papel o tijera, que ahí al menos hay un 33% de posibilidades.`,
+          `Una paloma picoteando una quiniela tendría mejor porcentaje. Y la paloma no presume de "ver mucho fútbol".`,
+        ],seed+'f2')});
     } else if(fl.length>=10){
       items.push({c:'',m:meta,
         t:pick([
           `${res} en el ${m.home}–${m.away}: solo ${lista(sg)} se salvan de la quema`,
           `El ${m.home}–${m.away} se lleva por delante a ${fl.length} quinielistas. ${lista(sg)} miran desde arriba con desprecio`,
-        ],seed+'f2'),
+          `Masacre en la Porra: ${fl.length} caídos en el ${m.home}–${m.away}. ${lista(sg)} sobreviven, nadie sabe cómo`,
+        ],seed+'f3'),
         b:pick([
           `El resto puso resultados tan creativos que la FIFA estudia incluirlos en una exposición de arte abstracto.`,
-          `${pick(fl,seed+'f3')} declaró: "yo es que el fútbol lo veo poco". Se nota, campeón. Se nota.`,
+          `${pringao} declaró: "yo es que el fútbol lo veo poco". Se nota, campeón. Se nota.`,
+          `${pringao}${pringao2?' y '+pringao2:''} lideran la lista de damnificados. En sus casas ya les esconden el móvil cuando hay que rellenar la quiniela.`,
         ],seed+'f4')});
+    } else if(goleada){
+      items.push({c:'',m:meta,
+        t:pick([
+          `${ganador} endosa un ${res} y revienta las quinielas prudentes: ${ex.length?lista(ex)+' lo vio venir':'nadie puso tanto gol'}`,
+          `Festival de goles (${res}) en el ${m.home}–${m.away}. ${pringao?pringao+' había puesto un empate. Un empate. Hay que verlo para creerlo':'Las quinielas, como siempre, mucho más aburridas que el fútbol'}`,
+          `${res}. ${pringao?pringao+' pronosticó este partido con la misma puntería con la que juega al fútbol: ninguna':'Goleada que pilló a casi toda la Porra mirando otro canal'}`,
+        ],seed+'g1'),
+        b:pick([
+          `${sg.length?lista(sg.slice(0,3))+' al menos acertaron quién ganaba. El listón está tan bajo que eso ya es noticia.':'Ni el signo, oiga. Ni el signo.'}`,
+          `Goleadas así separan a los que ven fútbol de los que dicen que ven fútbol. La Porra está llena de los segundos.`,
+        ],seed+'g2')});
     } else if(ganador&&(m.home==='España'||m.away==='España')){
       items.push({c:'',m:meta,
         t:ganador==='España'
-          ?`España gana ${res} y los 15 del KUADRI se ponen medallas: "lo dije yo primero"`
-          :`España pincha (${res}) y en el KUADRI ya hay ${fl.length} damnificados pidiendo la dimisión de alguien, de quien sea`,
+          ?pick([
+            `España gana ${res} y los 15 de la Porra se ponen medallas: "lo dije yo primero"`,
+            `España cumple (${res}) y la Porra entera presume de ojo clínico. Acertar que gana España: nivel dios`,
+          ],seed+'s1')
+          :pick([
+            `España pincha (${res}) y en la Porra ya hay ${fl.length} damnificados pidiendo la dimisión de alguien, de quien sea`,
+            `DRAMA: España no gana (${res}) y se lleva por delante las quinielas patrióticas de ${fl.length} ilusos`,
+          ],seed+'s2'),
         b:ganador==='España'
           ?`Acertar que gana España es como acertar que mañana sale el sol: ${lista(sg.slice(0,4))} y compañía rascan su puntito de signo y lo celebran como una Champions.`
-          :`Las quinielas del grupo daban a España poco menos que campeona del partido por 4-0. La realidad, como siempre, sin avisar.`});
+          :`Las quinielas del grupo daban a España poco menos que campeona del partido por 4-0. La realidad, como siempre, sin avisar. ${pringao?pringao+', el más optimista, ya no coge el teléfono.':''}`});
     } else {
       items.push({c:'',m:meta,
         t:pick([
           `${res} en el ${m.home}–${m.away}: ${lista(sg.slice(0,3))}${sg.length>3?' y otros '+(sg.length-3):''} aciertan el signo y ya se creen Rafa Honigstein`,
           `El ${m.home}–${m.away} acaba ${res} y reparte puntitos de consolación a ${sg.length} quinielistas`,
           `${ganador?ganador+' gana':'Empate'} (${res}) y ${lista(fl.slice(0,2))} siguen sin enterarse de qué torneo es este`,
+          `${res} en el ${m.home}–${m.away}. ${pringao?pringao+' falla otra vez: la constancia es una virtud, dicen':'Reparto de migajas en la Porra'}`,
+          `Partido para ${lista(sg.slice(0,2))||'casi nadie'}: el ${m.home}–${m.away} (${res}) deja más fallos que aciertos, como de costumbre`,
+          `${ganador||'El empate'} se impone (${res}) y ${pringao?pringao+' confirma que su quiniela la rellena su gato. El gato lo niega y se desmarca':'la Porra sigue a su nivel: bajo'}`,
+          `${res}. ${ex.length===0?'Cero exactos. Cuando el nivel es este, lo raro es que acertéis el día del partido':'Puntos repartidos con cuentagotas'}`,
+          `Crónica express del ${m.home}–${m.away} (${res}): ${sg.length} medio-aciertos, ${fl.length} ridículos y cero autocrítica`,
         ],seed+'d1'),
         b:pick([
           `Nadie clavó el exacto, que es lo que de verdad da puntos. Mucho ruido, pocos goles acertados.`,
           `Un punto por el signo. Enhorabuena, supongo. Los 3 del resultado exacto siguen huérfanos.`,
-          `${pick(fl,seed+'d2')||'Alguno'} puso un marcador tan optimista que ni los aficionados del equipo se lo creían.`,
+          `${pringao||'Alguno'} puso un marcador tan optimista que ni los aficionados del equipo se lo creían.`,
+          `Comparativa odiosa: ${sg.length?pick(sg,seed+'d4')+' al menos rascó un punto.':'Nadie rascó nada.'} ${pringao?pringao+' rascó lo de siempre: nada. Su quiniela y un papel en blanco valen los mismos puntos.':''}`,
+          `${pringao?pringao+' suma otro cero a una colección que empieza a ser preocupante. Los médicos descartan mal de ojo: es simplemente que no tiene ni idea.':'Jornada de transición, que es como llamamos aquí a fallar con dignidad.'}`,
         ],seed+'d3')});
     }
+
+    // noticia extra de racha: alguien que lleve 3+ jornadas a cero
+    PLAYERS.forEach((p,j)=>{
+      const r=rachaCeros(j,m.iso);
+      if(r===3&&pick([true,false],seed+p)){ // solo al cumplir 3, y no siempre, para no saturar
+        items.push({c:'',m:`Especial rachas · ${fmtDay(m.iso)}`,
+          t:pick([
+            `${p} cumple ${r} jornadas seguidas sin puntuar y entra oficialmente en la UCI de la Porra`,
+            `La sequía de ${p} alcanza las ${r} jornadas. Científicos de todo el mundo quieren estudiar su cerebro`,
+          ],seed+'r'+p),
+          b:`Tres jornadas. Cero puntos. Ni un signo, ni un empate de chiripa, nada. A este ritmo, su mayor aportación al grupo será servir de ejemplo de lo que no hay que hacer.`});
+      }
+    });
   });
 
   // ── CRÓNICA LARGA DE CADA JORNADA COMPLETADA ──
@@ -501,7 +573,6 @@ function buildNews(){
     const allDone=dayIdx.every(i=>LIVE[i]&&LIVE[i].status==='post');
     if(!allDone)return;
     const seed='cron'+day;
-    // puntos del dia por jugador
     const dpts=PLAYERS.map((p,j)=>{
       let pts=0,ex=0;
       dayIdx.forEach(i=>{
@@ -514,7 +585,6 @@ function buildNews(){
     const top=dpts[0];
     const cotop=dpts.filter(d=>d.pts===top.pts).map(d=>d.name);
     const ceros=dpts.filter(d=>d.pts===0).map(d=>d.name);
-    // lider general acumulado hasta este dia incluido
     const acum=PLAYERS.map((p,j)=>{
       let pts=0;
       finished.forEach(i=>{
@@ -526,50 +596,60 @@ function buildNews(){
       return{name:p,pts};
     }).sort((a,b)=>b.pts-a.pts);
     const lider=acum[0];
+    const colista=acum[acum.length-1];
 
     const intro=pick([
       `Otra jornada del Mundial en los libros y otra demostración colectiva de que en este grupo el fútbol se ve mucho pero se entiende poco.`,
-      `Se cierra la jornada y con ella las esperanzas de varios miembros del KUADRI, que siguen confundiendo "hacer la quiniela" con "tirar dardos con los ojos vendados".`,
+      `Se cierra la jornada y con ella las esperanzas de varios miembros de la Porra, que siguen confundiendo "hacer la quiniela" con "tirar dardos con los ojos vendados".`,
       `Jornada finiquitada. ${dayIdx.length} partido${dayIdx.length>1?'s':''}, mucha emoción en los estadios y un nivel de pronóstico en este grupo que da entre pena y risa.`,
+      `Termina otro día de Mundial y esta redacción sigue sin entender cómo 15 personas que llevan viendo fútbol toda la vida pronostican como si lo hubieran descubierto ayer en un bar.`,
+      `Día de fútbol en tres continentes y de bochorno en uno solo: el grupo de WhatsApp de la Porra.`,
     ],seed+'i');
     const heroe=top.pts>0
       ?pick([
         `El día se lo lleva ${lista(cotop)} con ${top.pts} punto${top.pts>1?'s':''}${top.ex?' y resultado exacto incluido':''}. Disfrutad del momento de gloria, que con vuestro historial no va a durar.`,
         `${lista(cotop)} firma${cotop.length>1?'n':''} la mejor jornada (${top.pts} pts)${top.ex?', con exacto y todo':''}. Ya está${cotop.length>1?'n':''} redactando el discurso de campeón. Tranquilos, queda Mundial para hundiros.`,
+        `${lista(cotop)} se corona${cotop.length>1?'n':''} con ${top.pts} punto${top.pts>1?'s':''}. Hasta los relojes rotos aciertan a veces, pero hoy toca aplaudir. Mañana volvemos al vacile.`,
       ],seed+'h')
       :`Lo mejor del día: nadie. Literalmente nadie puntuó. Un aplauso lento para los 15.`;
     const paquetes=ceros.length
       ?pick([
         `En el vagón de cola, con cero patatero: ${lista(ceros)}. ${ceros.length>3?'Sois tantos que casi formáis otro grupo del Mundial, uno que no se clasifica para nada.':'Se admite cualquier excusa menos "no vi el partido", porque para esto da igual.'}`,
         `Mención deshonorífica a ${lista(ceros)}, que se han ido de vacío. Dicen que lo importante es participar. Lo dicen ellos, claro.`,
+        `Capítulo de vergüenza ajena: ${lista(ceros)} a cero. Sus quinielas de hoy van directas al museo de los horrores, sala principal, vitrina con luz propia.`,
+        `${lista(ceros)}: cero puntos. Hay plantas de interior con mejor lectura táctica del juego. Y las plantas no presumen en el grupo.`,
       ],seed+'p')
       :`Milagro: hoy nadie se fue de vacío. Apuntad la fecha.`;
     const lidertxt=pick([
-      `En la general manda ${lider.name} con ${lider.pts} puntos, repartiendo collejas morales al resto. ${acum[acum.length-1].name} cierra la tabla y ya mira la porra de Eurovisión como plan B.`,
-      `${lider.name} sigue al frente (${lider.pts} pts) y cada día que pasa se le entiende peor cuando habla, de lo subido que está. Por abajo, ${acum[acum.length-1].name} pide que la clasificación se lea de abajo a arriba.`,
+      `En la general manda ${lider.name} con ${lider.pts} puntos, repartiendo collejas morales al resto. ${colista.name} cierra la tabla y ya mira la porra de Eurovisión como plan B.`,
+      `${lider.name} sigue al frente (${lider.pts} pts) y cada día que pasa se le entiende peor cuando habla, de lo subido que está. Por abajo, ${colista.name} pide que la clasificación se lea de abajo a arriba.`,
+      `Comparativa odiosa de la general: ${lider.name} arriba con ${lider.pts} puntos, ${colista.name} abajo con ${colista.pts}. Mismo deporte, mismos partidos, mismos ojos para verlos. La diferencia: uno los usa.`,
+      `${lider.name} lidera con ${lider.pts} puntos. ${colista.name}, colista, asegura que "esto es una carrera de fondo". Correcto: y va último en la carrera de fondo.`,
     ],seed+'l');
     const cierre=pick([
-      `Mañana más fútbol y, conociendo el percal, más motivos para reírse de alguien. KUADRI News no descansa.`,
+      `Mañana más fútbol y, conociendo el percal, más motivos para reírse de alguien. Porra News no descansa.`,
       `Seguiremos informando. Ellos seguirán fallando. El equilibrio del universo, intacto.`,
       `Esto ha sido todo por hoy. Recuerden: la vergüenza es temporal, los puntos son para siempre.`,
+      `Cerramos edición. Si mañana alguno acierta algo, abriremos con ello. No esperamos abrir con ello.`,
     ],seed+'c');
 
     items.push({c:'cronica',m:`Crónica de la jornada · ${fmtDay(day)}`,
       t:pick([
-        `CRÓNICA: ${fmtDay(day)} — el día en que ${top.pts>0?lista(cotop)+' miró al resto por encima del hombro':'el KUADRI tocó fondo'}`,
-        `LA CRÓNICA FALTOSA: así fue el ${fmtDay(day)} en el KUADRI`,
+        `CRÓNICA: ${fmtDay(day)} — el día en que ${top.pts>0?lista(cotop)+' miró al resto por encima del hombro':'la Porra tocó fondo'}`,
+        `LA CRÓNICA FALTOSA: así fue el ${fmtDay(day)} en la Porra`,
+        `PARTE DE GUERRA: lo que la jornada del ${fmtDay(day)} dejó en la Porra (heridos múltiples)`,
       ],seed+'t'),
       b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${cierre}`});
   });
 
-  return items.reverse(); // mas reciente arriba
+  return items.reverse();
 }
 
 function renderNews(){
   const items=buildNews();
   const el=document.getElementById('newsList');
   if(!items.length){
-    el.innerHTML='<div class="news"><div class="nh">KUADRI News, en directo desde la redacción</div><div class="nb">Aún no hay resultados que destrozar. En cuanto acabe el primer partido, empezamos a repartir. Hay nervios en la redacción.</div><div class="nm">KUADRI News · Edición inaugural</div></div>';
+    el.innerHTML='<div class="news"><div class="nh">Porra News, en directo desde la redacción</div><div class="nb">Aún no hay resultados que destrozar. En cuanto acabe el primer partido, empezamos a repartir. Hay nervios en la redacción.</div><div class="nm">Porra News · Edición inaugural</div></div>';
     return;
   }
   el.innerHTML=items.map(n=>`<div class="news ${n.c||''}">
