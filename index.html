@@ -175,10 +175,18 @@ const EN_FLAG={};
 MATCHES.forEach(m=>{EN_FLAG[norm(m.eh)]=m.hf;EN_FLAG[norm(m.ea)]=m.af;});
 const EN_ES={};
 Object.entries(ES2EN).forEach(([es,en])=>{EN_ES[norm(en)]=es;});
-// limpia datos corruptos (equipos TBD) guardados por versiones anteriores
+// emparejamientos de fase de grupos (para no confundirlos con eliminatorias)
+const GROUP_KEYS=new Set();
+MATCHES.forEach(m=>{
+  GROUP_KEYS.add(norm(m.eh)+'|'+norm(m.ea));
+  GROUP_KEYS.add(norm(m.ea)+'|'+norm(m.eh));
+});
+// limpia datos corruptos guardados por versiones anteriores
+// (equipos TBD o partidos de grupos mal clasificados como eliminatorias)
 Object.keys(SAVED.ko||{}).forEach(k=>{
   const v=SAVED.ko[k];
-  if(!v||!EN_FLAG[v.h]||!EN_FLAG[v.a])delete SAVED.ko[k];
+  if(!v||!EN_FLAG[v.h]||!EN_FLAG[v.a]||
+     (GROUP_KEYS.has(v.h+'|'+v.a)&&v.date<='20260629'))delete SAVED.ko[k];
 });
 
 function renderMatches(){
@@ -397,11 +405,15 @@ function renderScorers(list){
 const BASE='https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
 
 function statusOf(c){
-  // state es fiable en futbol: pre / in / post (STATUS_FULL_TIME cuenta como post)
   const s=c.status&&c.status.type&&c.status.type.state;
   return s==='post'?'post':s==='in'?'in':'pre';
 }
-function isRealTeam(n){return !!EN_FLAG[n];}  // solo los 48 equipos del mundial
+function isRealTeam(n){return !!EN_FLAG[n];}
+// fecha LOCAL del estadio: ESPN da UTC; restando 8h cae siempre en el dia local (USA/Mex/Can)
+function localDate(iso){
+  const t=new Date(iso).getTime()-8*3600*1000;
+  return new Date(t).toISOString().slice(0,10).replace(/-/g,'');
+}
 
 function processEvents(events,map){
   (events||[]).forEach(ev=>{
@@ -413,9 +425,11 @@ function processEvents(events,map){
     const status=statusOf(c);
     const rec={status,hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
     map[hn+'|'+an]=rec;
-    const evd=(ev.date||'').slice(0,10).replace(/-/g,'');
-    // solo eventos de eliminatorias con equipos REALES (ignora TBD/placeholders)
-    if(evd>='20260628'&&isRealTeam(hn)&&isRealTeam(an)){
+    const evd=localDate(ev.date||'');
+    // eliminatoria: fecha local >= 28 jun, equipos reales, y NO es un cruce de grupos
+    // (en la frontera 27-29 jun un partido de grupos jamas debe contar como 16avos)
+    const isGroupPair=GROUP_KEYS.has(hn+'|'+an);
+    if(evd>='20260628'&&isRealTeam(hn)&&isRealTeam(an)&&!(isGroupPair&&evd<='20260629')){
       const winner=h.winner?hn:a.winner?an:null;
       const ko={date:evd,h:hn,a:an,hs:rec.hs,as:rec.as,status,clock:rec.clock,winner:status==='post'?winner:null};
       KO_EVENTS[evd+'|'+hn+'|'+an]=ko;
