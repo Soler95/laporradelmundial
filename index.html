@@ -63,6 +63,15 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 .daily td{padding:.35rem .7rem;border-top:1px solid #15243d}
 .daily .dp{font-weight:700;color:#6fdc6f;text-align:right}
 .daily .dz{color:#3a5a7a;text-align:right}
+.news{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;margin-bottom:.55rem;padding:.65rem .8rem;border-left:3px solid #c9a227}
+.news .nh{font-size:.84rem;font-weight:700;line-height:1.35;color:#fff}
+.news .nb{font-size:.72rem;color:#8faabf;margin-top:.3rem;line-height:1.5}
+.news .nm{font-size:.58rem;color:#4a6a8a;margin-top:.35rem;text-transform:uppercase;letter-spacing:.05em}
+.news.breaking{border-left-color:#e85d4a}
+.news.breaking .nm::before{content:"🔴 ÚLTIMA HORA · ";color:#e85d4a}
+.news.cronica{border-left-color:#9b59b6;background:#13182f}
+.news.cronica .nh{color:#d8b4f0}
+.news.cronica .nb{font-size:.74rem;color:#a8b8cf}
 </style>
 </head>
 <body>
@@ -80,6 +89,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <button class="active" onclick="show('partidos',this)">Partidos</button>
   <button onclick="show('pronos',this)">Pronosticos</button>
   <button onclick="show('apuestas',this)">Apuestas</button>
+  <button onclick="show('noticias',this)">📰 KUADRI News</button>
   <button onclick="show('ranking',this)">🏆 Ranking</button>
 </nav>
 
@@ -103,6 +113,11 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <select id="playerSel" onchange="renderBets()"></select>
   <div id="betList"></div>
   <div class="note">Bonus: 16avos +3 · octavos +5 · cuartos +8 · semis +12 · final +16 · Campeon +20 · 3er puesto +8 · Bota de Oro +10 · Balon de Oro +5.</div>
+</div>
+
+<div id="noticias" class="page">
+  <div id="newsList"></div>
+  <div class="note">📰 KUADRI News — periodismo de máxima rigurosidad. Las noticias se generan automáticamente con cada resultado.</div>
 </div>
 
 <div id="ranking" class="page">
@@ -390,6 +405,180 @@ function renderRanking(){
     <td class="rpt">${t.pts}</td></tr>`).join('');
 }
 
+// ── KUADRI NEWS ──────────────────────────────────────
+function h32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h);}
+function pick(arr,seed){return arr[h32(seed)%arr.length];}
+function lista(names){
+  if(!names.length)return '';
+  if(names.length===1)return names[0];
+  return names.slice(0,-1).join(', ')+' y '+names[names.length-1];
+}
+
+function buildNews(){
+  const items=[];
+  // datos por partido terminado, en orden cronologico
+  const finished=[];
+  DAY_ORDER.forEach(i=>{
+    const lv=LIVE[i];
+    if(lv&&lv.status==='post')finished.push(i);
+  });
+
+  finished.forEach(i=>{
+    const m=MATCHES[i],lv=LIVE[i];
+    const hs=parseInt(lv.hs),as=parseInt(lv.as);
+    const res=`${hs}-${as}`;
+    const seed=m.code+m.home+res;
+    const ex=[],sg=[],fl=[];
+    PLAYERS.forEach((p,j)=>{
+      const pts=pointsFor(m.preds[j],hs,as);
+      if(pts===null)return;
+      if(pts>=4)ex.push(p);else if(pts>=1)sg.push(p);else fl.push(p);
+    });
+    const ganador=hs>as?m.home:as>hs?m.away:null;
+    const meta=`${m.home} ${res} ${m.away} · ${fmtDay(m.iso)}`;
+
+    if(ex.length===1){
+      items.push({c:'breaking',m:meta,
+        t:pick([
+          `Abren expediente a ${ex[0]} por clavar el ${res}: "Nadie acierta eso sin ayuda de las altas esferas"`,
+          `${ex[0]} predice el ${res} exacto y ya se pasea por el grupo como si hubiera ganado el Mundial él solo`,
+          `EXCLUSIVA: ${ex[0]} tenía un primo en el vestuario. Es la única explicación al ${res} que clavó`,
+          `${ex[0]} acierta el resultado exacto y pide que a partir de ahora se le llame "El Oráculo"`,
+        ],seed+'e1'),
+        b:pick([
+          `Mientras tanto, ${lista(fl.slice(0,3))||'el resto'} siguen buscando el partido que vieron ellos, porque el que pusieron en la quiniela desde luego no era este.`,
+          `Los otros ${14-sg.length} quinielistas han pedido que se revise el VAR de la quiniela. No hay nada que revisar: son malísimos.`,
+          `Fuentes del KUADRI confirman que ${ex[0]} lleva toda la semana insoportable. Y lo que queda.`,
+        ],seed+'e2')});
+    } else if(ex.length>1){
+      items.push({c:'breaking',m:meta,
+        t:`${lista(ex)} clavan el ${res} y forman el nuevo club de listillos del KUADRI`,
+        b:`Cuatro puntazos por cabeza. El resto del grupo estudia denunciar el partido por amañado, porque reconocer que ${lista(ex)} saben más que ellos no es una opción.`});
+    } else if(sg.length===0){
+      items.push({c:'breaking',m:meta,
+        t:pick([
+          `CATÁSTROFE NACIONAL: los 15 cerebros del KUADRI fallan el ${m.home}–${m.away}. Ni uno. Cero.`,
+          `El ${m.home}–${m.away} acaba ${res} y deja al KUADRI en ridículo internacional: 15 pronósticos, 15 desastres`,
+        ],seed+'f1'),
+        b:`Quince personas. Quince. Y ninguna se acercó ni de casualidad. Los expertos recomiendan que el año que viene apostéis a piedra, papel o tijera, que ahí al menos hay un 33% de posibilidades.`});
+    } else if(fl.length>=10){
+      items.push({c:'',m:meta,
+        t:pick([
+          `${res} en el ${m.home}–${m.away}: solo ${lista(sg)} se salvan de la quema`,
+          `El ${m.home}–${m.away} se lleva por delante a ${fl.length} quinielistas. ${lista(sg)} miran desde arriba con desprecio`,
+        ],seed+'f2'),
+        b:pick([
+          `El resto puso resultados tan creativos que la FIFA estudia incluirlos en una exposición de arte abstracto.`,
+          `${pick(fl,seed+'f3')} declaró: "yo es que el fútbol lo veo poco". Se nota, campeón. Se nota.`,
+        ],seed+'f4')});
+    } else if(ganador&&(m.home==='España'||m.away==='España')){
+      items.push({c:'',m:meta,
+        t:ganador==='España'
+          ?`España gana ${res} y los 15 del KUADRI se ponen medallas: "lo dije yo primero"`
+          :`España pincha (${res}) y en el KUADRI ya hay ${fl.length} damnificados pidiendo la dimisión de alguien, de quien sea`,
+        b:ganador==='España'
+          ?`Acertar que gana España es como acertar que mañana sale el sol: ${lista(sg.slice(0,4))} y compañía rascan su puntito de signo y lo celebran como una Champions.`
+          :`Las quinielas del grupo daban a España poco menos que campeona del partido por 4-0. La realidad, como siempre, sin avisar.`});
+    } else {
+      items.push({c:'',m:meta,
+        t:pick([
+          `${res} en el ${m.home}–${m.away}: ${lista(sg.slice(0,3))}${sg.length>3?' y otros '+(sg.length-3):''} aciertan el signo y ya se creen Rafa Honigstein`,
+          `El ${m.home}–${m.away} acaba ${res} y reparte puntitos de consolación a ${sg.length} quinielistas`,
+          `${ganador?ganador+' gana':'Empate'} (${res}) y ${lista(fl.slice(0,2))} siguen sin enterarse de qué torneo es este`,
+        ],seed+'d1'),
+        b:pick([
+          `Nadie clavó el exacto, que es lo que de verdad da puntos. Mucho ruido, pocos goles acertados.`,
+          `Un punto por el signo. Enhorabuena, supongo. Los 3 del resultado exacto siguen huérfanos.`,
+          `${pick(fl,seed+'d2')||'Alguno'} puso un marcador tan optimista que ni los aficionados del equipo se lo creían.`,
+        ],seed+'d3')});
+    }
+  });
+
+  // ── CRÓNICA LARGA DE CADA JORNADA COMPLETADA ──
+  const days=[...new Set(finished.map(i=>MATCHES[i].iso))];
+  days.forEach(day=>{
+    const dayIdx=MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day);
+    const allDone=dayIdx.every(i=>LIVE[i]&&LIVE[i].status==='post');
+    if(!allDone)return;
+    const seed='cron'+day;
+    // puntos del dia por jugador
+    const dpts=PLAYERS.map((p,j)=>{
+      let pts=0,ex=0;
+      dayIdx.forEach(i=>{
+        const lv=LIVE[i];
+        const pp=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as));
+        if(pp){pts+=pp;if(pp>=4)ex++;}
+      });
+      return{name:p,pts,ex};
+    }).sort((a,b)=>b.pts-a.pts);
+    const top=dpts[0];
+    const cotop=dpts.filter(d=>d.pts===top.pts).map(d=>d.name);
+    const ceros=dpts.filter(d=>d.pts===0).map(d=>d.name);
+    // lider general acumulado hasta este dia incluido
+    const acum=PLAYERS.map((p,j)=>{
+      let pts=0;
+      finished.forEach(i=>{
+        if(MATCHES[i].iso>day)return;
+        const lv=LIVE[i];
+        const pp=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as));
+        if(pp)pts+=pp;
+      });
+      return{name:p,pts};
+    }).sort((a,b)=>b.pts-a.pts);
+    const lider=acum[0];
+
+    const intro=pick([
+      `Otra jornada del Mundial en los libros y otra demostración colectiva de que en este grupo el fútbol se ve mucho pero se entiende poco.`,
+      `Se cierra la jornada y con ella las esperanzas de varios miembros del KUADRI, que siguen confundiendo "hacer la quiniela" con "tirar dardos con los ojos vendados".`,
+      `Jornada finiquitada. ${dayIdx.length} partido${dayIdx.length>1?'s':''}, mucha emoción en los estadios y un nivel de pronóstico en este grupo que da entre pena y risa.`,
+    ],seed+'i');
+    const heroe=top.pts>0
+      ?pick([
+        `El día se lo lleva ${lista(cotop)} con ${top.pts} punto${top.pts>1?'s':''}${top.ex?' y resultado exacto incluido':''}. Disfrutad del momento de gloria, que con vuestro historial no va a durar.`,
+        `${lista(cotop)} firma${cotop.length>1?'n':''} la mejor jornada (${top.pts} pts)${top.ex?', con exacto y todo':''}. Ya está${cotop.length>1?'n':''} redactando el discurso de campeón. Tranquilos, queda Mundial para hundiros.`,
+      ],seed+'h')
+      :`Lo mejor del día: nadie. Literalmente nadie puntuó. Un aplauso lento para los 15.`;
+    const paquetes=ceros.length
+      ?pick([
+        `En el vagón de cola, con cero patatero: ${lista(ceros)}. ${ceros.length>3?'Sois tantos que casi formáis otro grupo del Mundial, uno que no se clasifica para nada.':'Se admite cualquier excusa menos "no vi el partido", porque para esto da igual.'}`,
+        `Mención deshonorífica a ${lista(ceros)}, que se han ido de vacío. Dicen que lo importante es participar. Lo dicen ellos, claro.`,
+      ],seed+'p')
+      :`Milagro: hoy nadie se fue de vacío. Apuntad la fecha.`;
+    const lidertxt=pick([
+      `En la general manda ${lider.name} con ${lider.pts} puntos, repartiendo collejas morales al resto. ${acum[acum.length-1].name} cierra la tabla y ya mira la porra de Eurovisión como plan B.`,
+      `${lider.name} sigue al frente (${lider.pts} pts) y cada día que pasa se le entiende peor cuando habla, de lo subido que está. Por abajo, ${acum[acum.length-1].name} pide que la clasificación se lea de abajo a arriba.`,
+    ],seed+'l');
+    const cierre=pick([
+      `Mañana más fútbol y, conociendo el percal, más motivos para reírse de alguien. KUADRI News no descansa.`,
+      `Seguiremos informando. Ellos seguirán fallando. El equilibrio del universo, intacto.`,
+      `Esto ha sido todo por hoy. Recuerden: la vergüenza es temporal, los puntos son para siempre.`,
+    ],seed+'c');
+
+    items.push({c:'cronica',m:`Crónica de la jornada · ${fmtDay(day)}`,
+      t:pick([
+        `CRÓNICA: ${fmtDay(day)} — el día en que ${top.pts>0?lista(cotop)+' miró al resto por encima del hombro':'el KUADRI tocó fondo'}`,
+        `LA CRÓNICA FALTOSA: así fue el ${fmtDay(day)} en el KUADRI`,
+      ],seed+'t'),
+      b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${cierre}`});
+  });
+
+  return items.reverse(); // mas reciente arriba
+}
+
+function renderNews(){
+  const items=buildNews();
+  const el=document.getElementById('newsList');
+  if(!items.length){
+    el.innerHTML='<div class="news"><div class="nh">KUADRI News, en directo desde la redacción</div><div class="nb">Aún no hay resultados que destrozar. En cuanto acabe el primer partido, empezamos a repartir. Hay nervios en la redacción.</div><div class="nm">KUADRI News · Edición inaugural</div></div>';
+    return;
+  }
+  el.innerHTML=items.map(n=>`<div class="news ${n.c||''}">
+    <div class="nh">${n.t}</div>
+    <div class="nb">${n.b}</div>
+    <div class="nm">${n.m}</div>
+  </div>`).join('');
+}
+
 function renderScorers(list){
   const el=document.getElementById('scorers');
   if(!list||!list.length){el.innerHTML='';return;}
@@ -505,11 +694,11 @@ async function refresh(){
   await fetchScores();
   processKnockouts();
   await fetchScorers();
-  renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();
+  renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();renderNews();
 }
 
 initSel();
-renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();
+renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();renderNews();
 refresh();
 setInterval(refresh,60000);
 </script>
