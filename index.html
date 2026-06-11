@@ -343,25 +343,29 @@ async function fetchScores(){
       map[norm(h.team.displayName)+'|'+norm(a.team.displayName)]={
         status:st==='STATUS_FINAL'?'post':st==='STATUS_IN_PROGRESS'?'in':'pre',
         hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
+
+const oldLive = [...LIVE];
+
 LIVE = MATCHES.map((m,i)=>{
-  const k1 = norm(m.eh)+'|'+norm(m.ea);
-  const k2 = norm(m.ea)+'|'+norm(m.eh);
+  const k1 = norm(m.eh) + '|' + norm(m.ea);
+  const k2 = norm(m.ea) + '|' + norm(m.eh);
 
   if(map[k1]) return map[k1];
 
   if(map[k2]){
     const x = map[k2];
     return {
-      status:x.status,
-      hs:x.as,
-      as:x.hs,
-      clock:x.clock
+      status: x.status,
+      hs: x.as,
+      as: x.hs,
+      clock: x.clock
     };
   }
 
-  // conservar el marcador anterior
-  return LIVE[i];
+  // Mantener el último marcador conocido
+  return oldLive[i] || null;
 });
+      
     document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     document.getElementById('sync').textContent='Sin conexion';
