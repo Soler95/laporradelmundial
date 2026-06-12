@@ -161,11 +161,22 @@ let QUALIFIED={r32:null,r16:null,qf:null,sf:null,fin:null};
 let CHAMPION=null,THIRD=null,TOPSCORER=SAVED.topscorer,TOURNAMENT_DONE=false;
 
 function norm(n){
-  return (n||'').toLowerCase().replace(/\./g,'').replace(/-/g,' ')
-    .replace(/united states of america/,'usa').replace(/united states/,'usa')
-    .replace(/t.rkiye/,'turkey').replace(/c.te d.ivoire/,'ivory coast')
-    .replace(/[áàâä]/g,'a').replace(/[éèêë]/g,'e').replace(/[íìîï]/g,'i')
-    .replace(/[óòôö]/g,'o').replace(/[úùûü]/g,'u').trim();
+  // quita TODOS los acentos/diacriticos (á, ç, ü, š...) de forma universal
+  n=(n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  n=n.replace(/\./g,'').replace(/-/g,' ').replace(/\s+/g,' ').trim();
+  // alias: distintos nombres que ESPN/FIFA usan para el mismo equipo
+  return n
+    .replace(/united states of america|united states/,'usa')
+    .replace(/turkiye/,'turkey')
+    .replace(/cote d.ivoire|ivory coast/,'ivory coast')
+    .replace(/czechia|czech republic/,'czech')
+    .replace(/korea republic|republic of korea/,'south korea')
+    .replace(/cabo verde|cape verde islands/,'cape verde')
+    .replace(/bosnia and herzegovina|bosnia herzegovina/,'bosnia')
+    .replace(/democratic republic of the congo|democratic republic of congo|congo dr/,'dr congo')
+    .replace(/^ir iran$/,'iran')
+    .replace(/^netherlands$|^holland$/,'netherlands')
+    .trim();
 }
 function teamEn(es){return norm(ES2EN[es]||es);}
 function signOf(h,a){return h>a?'1':h<a?'2':'X';}
@@ -768,19 +779,32 @@ async function fetchScores(){
   persist();
 }
 
+let SCORERS_NEXT_TRY=0;  // backoff: si /leaders no existe aun, reintenta cada 30 min
 async function fetchScorers(){
-  try{
-    const r=await fetch(BASE+'/leaders',{cache:'no-store'});
-    if(!r.ok)return;
-    const d=await r.json();
-    const cats=d.categories||[];
-    const gc=cats.find(c=>(c.name||'').toLowerCase().includes('goal'))||cats[0];
-    if(!gc)return;
-    const list=(gc.leaders||[]).slice(0,3).map(l=>({
-      name:l.athlete&&l.athlete.displayName||'—',
-      team:l.team&&l.team.displayName||'',goals:l.value||0}));
-    if(list.length){renderScorers(list);TOPSCORER=list[0].name;SAVED.topscorer=TOPSCORER;persist();}
-  }catch(e){}
+  if(Date.now()<SCORERS_NEXT_TRY)return;
+  const urls=[
+    BASE+'/leaders',
+    'https://site.web.api.espn.com/apis/site/v2/sports/soccer/fifa.world/leaders'
+  ];
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{cache:'no-store'});
+      if(!r.ok)continue;
+      const d=await r.json();
+      const cats=d.categories||[];
+      const gc=cats.find(c=>(c.name||'').toLowerCase().includes('goal'))||cats[0];
+      if(!gc)continue;
+      const list=(gc.leaders||[]).slice(0,3).map(l=>({
+        name:l.athlete&&l.athlete.displayName||'—',
+        team:l.team&&l.team.displayName||'',goals:l.value||0}));
+      if(list.length){
+        renderScorers(list);TOPSCORER=list[0].name;SAVED.topscorer=TOPSCORER;persist();
+        return; // exito: sin backoff
+      }
+    }catch(e){}
+  }
+  // ningun endpoint disponible: pausa 30 min para no ensuciar la consola
+  SCORERS_NEXT_TRY=Date.now()+30*60*1000;
 }
 
 function initSel(){
