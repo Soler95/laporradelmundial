@@ -141,7 +141,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 </div>
 
 <div id="ranking" class="page">
-  <button class="share-btn" onclick="copyRanking()" style="margin-bottom:.6rem">📋 Copiar ranking para WhatsApp</button>
+  <button class="share-btn" onclick="copyRanking(this)" style="margin-bottom:.6rem">📋 Copiar ranking para WhatsApp</button>
   <table class="rank">
     <thead><tr><th>#</th><th>Quinielista</th><th class="rc">Exact</th><th class="rc">Signo</th><th class="rc">Bonus</th><th style="text-align:right">Pts</th></tr></thead>
     <tbody id="rankBody"></tbody>
@@ -700,6 +700,94 @@ function buildNews(){
       b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${cierre}`});
   });
 
+  function buildKOPreview(day){
+    const dkey=day.replace(/-/g,'');
+    const evs=Object.values(KO_EVENTS).filter(e=>e.date===dkey)
+      .sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if(!evs.length)return null;
+    const s='koprev'+day;
+    const ronda=KO_ROUNDS.find(r=>dkey>=r.d1&&dkey<=r.d2);
+    const intro=pick([
+      `Buenos días desde la fase donde se separan los hombres de las quinielas: hoy hay eliminatorias y cada partido entierra sueños, casi todos suyos.`,
+      `Amanece en modo eliminatoria: hoy alguien se va a casa, y con él, trozos enteros de sus apuestas. La redacción ya tiene el pésame redactado.`,
+      `Día de cuchillos: en las eliminatorias no hay mañana, ni para los equipos ni para los cuadros que ustedes rellenaron con tanta alegría en mayo.`,
+      `Buenos días. Hoy el Mundial elimina selecciones y, de paso, audita sus apuestas de eliminatorias. La auditoría nunca sale bien.`,
+    ],s+'i');
+    const bloques=evs.map(e=>{
+      const hes=EN_ES[e.h]||e.h,aes=EN_ES[e.a]||e.a;
+      const hf=EN_FLAG[e.h]||'⚽',af=EN_FLAG[e.a]||'⚽';
+      const hora=e.t?` (${e.t} hora española)`:'';
+      const th=TIER[hes]||3,ta=TIER[aes]||3;
+      let analisis;
+      if(Math.abs(th-ta)>=2){
+        const fav=th<ta?hes:aes,vic=fav===hes?aes:hes;
+        analisis=pick([
+          `${fav} es muy superior, pero en eliminatorias los favoritos sudan: que le pregunten a la historia, que está llena de gigantes llorando en octavos.`,
+          `Favorito clarísimo ${fav}. ${vic} confía en el día perfecto y en los penaltis, ese deporte aparte donde todo puede pasar.`,
+        ],s+e.h+'a');
+      }else{
+        analisis=pick([
+          `Cruce igualado de los que valen un Mundial. A partido único puede pasar cualquier cosa, sobre todo lo que ustedes no pusieron.`,
+          `Duelo abierto, de detalles y de nervios. El tipo de partido que convierte cuadros de eliminatorias en confeti.`,
+        ],s+e.h+'a');
+      }
+      // en juego: apuestas de campeon/finalista con estos equipos
+      const stakes=[];
+      PLAYERS.forEach((p,j)=>{
+        const ch=teamEn(PICKS.champ[j]||'');
+        if(ch===e.h||ch===e.a)stakes.push(p+' (su campeón: '+(ch===e.h?hes:aes)+')');
+      });
+      const stakeTxt=stakes.length
+        ?pick([
+          ` Hoy se juegan el corazón ${lista(stakes.slice(0,3))}${stakes.length>3?' y '+(stakes.length-3)+' más':''}: si su equipo cae, sus 20 puntos de campeón se van con él. Palomitas.`,
+          ` Atención a ${lista(stakes.slice(0,3))}${stakes.length>3?' y compañía':''}, que tienen aquí a su campeón pronosticado. Un mal día y sus cuadros pasan de apuesta a obituario.`,
+        ],s+e.h+'st')
+        :'';
+      return `<b>${hf} ${hes} – ${af} ${aes}</b>${hora}. ${analisis}${stakeTxt}`;
+    });
+    const cierre=pick([
+      `Esta noche, crónica de daños y lista de cuadros defenestrados. No se la pierdan, salen ustedes.`,
+      `Volvemos tras los partidos a contar quién sigue soñando y quién ya solo acompaña. Spoiler: acompañar es lo suyo.`,
+      `Al cierre del día, recuento de supervivientes en sus apuestas. La palabra "supervivientes" es generosa.`,
+    ],s+'f');
+    return {
+      t:pick([
+        `☕ ANÁLISIS MATINAL · ${fmtDay(day)} — ${ronda?ronda.label.replace('🏆 ',''):'Eliminatorias'}`,
+        `☕ EL MATINAL DE PORRA NEWS · ${fmtDay(day)} — día de cuchillos`,
+      ],s+'t'),
+      b:`${intro}<br><br><b>🏟️ Los cruces de hoy</b><br><br>${bloques.join('<br><br>')}<br><br>${cierre}`
+    };
+  }
+
+  // previas de eliminatorias (1h antes), con onces si ESPN los publica
+  const nowKO=Date.now();
+  Object.entries(KO_EVENTS).forEach(([key,e])=>{
+    if(!e.ts||nowKO<e.ts-65*60000)return;
+    const hes=EN_ES[e.h]||e.h,aes=EN_ES[e.a]||e.a;
+    const hf=EN_FLAG[e.h]||'⚽',af=EN_FLAG[e.a]||'⚽';
+    const s='koprevia'+key;
+    const lu=LINEUPS['ko|'+key];
+    const hayOnce=lu&&lu.h.length>=7&&lu.a.length>=7;
+    const onces=hayOnce
+      ?`<b>Once de ${hes}:</b> ${lu.h.join(', ')}.<br><br><b>Once de ${aes}:</b> ${lu.a.join(', ')}.`
+      :`Onces por confirmar. Los seleccionadores dudan; ustedes, en cambio, apostaron sus cuadros hace un mes sin dudar. Por eso están como están.`;
+    const stakes=[];
+    PLAYERS.forEach((p,j)=>{
+      const ch=teamEn(PICKS.champ[j]||'');
+      if(ch===e.h||ch===e.a)stakes.push(p);
+    });
+    const vacile=stakes.length
+      ?`En una hora, ${lista(stakes)} se sienta${stakes.length>1?'n':''} delante de la tele con su campeón en juego y la tensión de quien firmó algo sin leerlo. Veinte puntos pendiendo de un hilo. La redacción, neutral pero entretenida.`
+      :pick([
+        `Una hora para otro cruce sin piedad. Sus apuestas de eliminatorias miran el partido desde la UCI, como casi todas.`,
+        `Sesenta minutos para el pitido. Repasen sus cuadros, aunque a estas alturas repasar duele más que esperar.`,
+      ],s+'v');
+    const dia=e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6);
+    items.push({k:dia+'a9k'+key,c:'',m:`⏱ Previa · ${hes} vs ${aes}${e.t?' · '+e.t:''}`,
+      t:`⏱ A UNA HORA: ${hf} ${hes} – ${af} ${aes}${hayOnce?'. Ya hay onces':''}`,
+      b:`${onces}<br><br>${vacile}`});
+  });
+
   // ── 👑 DESTRONAMIENTOS en el Salón de la Fama ──
   if(finished.length>=3){
     [AWARDS[0],AWARDS[1]].forEach(a=>{  // Oraculo y Muro generan noticia
@@ -1068,19 +1156,24 @@ function buildNews(){
 
   // generar matinales: dias pasados con partidos + hoy si son las 9:00 de Madrid
   const allDays=[...new Set(MATCHES.map(m=>m.iso))].sort();
-  allDays.forEach(day=>{
+  const koDays=[...new Set(Object.values(KO_EVENTS).map(e=>e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6)))];
+  [...new Set(allDays.concat(koDays))].sort().forEach(day=>{
     if(day>hoyM)return;
     if(day===hoyM&&horaM<9)return;
-    const pv=buildPreview(day);
+    const pv=buildPreview(day)||buildKOPreview(day);
     if(pv)items.push({k:day+'a',c:'matinal',m:'El matinal · '+fmtDay(day),t:pv.t,b:pv.b});
   });
-  // la hora del cafe: cada dia desde el 12 de junio a las 15:00 de Madrid
-  allDays.forEach(day=>{
-    if(day<'2026-06-12'||day>hoyM)return;
-    if(day===hoyM&&horaM<15)return;
-    const cf=cafeFor(day);
-    if(cf)items.push({k:day+'a5',c:'cafe',m:'La hora del café · '+fmtDay(day),t:cf.t,b:cf.b});
-  });
+  // la hora del cafe: TODOS los dias del Mundial (12 jun - 19 jul) a las 15:00 de Madrid
+  {
+    const d0=new Date('2026-06-12T12:00:00Z');
+    for(let n=0;n<38;n++){
+      const day=new Date(d0.getTime()+n*86400000).toISOString().slice(0,10);
+      if(day>hoyM)break;
+      if(day===hoyM&&horaM<15)continue;
+      const cf=cafeFor(day);
+      if(cf)items.push({k:day+'a5',c:'cafe',m:'La hora del café · '+fmtDay(day),t:cf.t,b:cf.b});
+    }
+  }
 
   items.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
   return items.reverse();
@@ -1225,8 +1318,7 @@ function shareNews(idx,btn){
   if(!n)return;
   copyText('📰 *PORRA NEWS*\n\n*'+toWhats(n.t)+'*\n\n'+toWhats(n.b),btn);
 }
-function copyRanking(){
-  const f=famaStats(null);
+function copyRanking(btn){
   const rows=PLAYERS.map((p,j)=>{
     let pts=0,ex=0,sg=0;
     MATCHES.forEach((m,i)=>{
@@ -1240,7 +1332,7 @@ function copyRanking(){
   }).sort((a,b)=>b.pts-a.pts||b.ex-a.ex);
   const med=['🥇','🥈','🥉'];
   const txt='🏆 *RANKING DE LA PORRA*\n\n'+rows.map((r,i)=>(med[i]||(i+1)+'.')+' '+r.name+' — '+r.pts+' pts').join('\n');
-  copyText(txt,event&&event.target);
+  copyText(txt,btn);
 }
 
 function renderScorers(list){
@@ -1288,7 +1380,7 @@ function processEvents(events,map){
     const isGroupPair=GROUP_KEYS.has(hn+'|'+an);
     if(evd>='20260628'&&isRealTeam(hn)&&isRealTeam(an)&&!(isGroupPair&&evd<='20260629')){
       const winner=h.winner?hn:a.winner?an:null;
-      const ko={date:evd,h:hn,a:an,hs:rec.hs,as:rec.as,status,clock:rec.clock,winner:status==='post'?winner:null};
+      const ko={date:evd,h:hn,a:an,hs:rec.hs,as:rec.as,status,clock:rec.clock,winner:status==='post'?winner:null,ts:rec.ts,id:rec.id,t:rec.t};
       KO_EVENTS[evd+'|'+hn+'|'+an]=ko;
       if(status==='post'){SAVED.ko[evd+'|'+hn+'|'+an]=ko;}
     }
@@ -1377,6 +1469,26 @@ async function fetchLineups(){
       });
       LINEUPS[i]=out;
     }catch(e){LINEUPS[i]={h:[],a:[],last:now};}
+  }
+  // eliminatorias
+  for(const[key,e]of Object.entries(KO_EVENTS)){
+    if(!e.ts||!e.id)continue;
+    const mins=(e.ts-now)/60000;
+    if(mins>70||mins<-15)continue;
+    const ck='ko|'+key;
+    const cached=LINEUPS[ck];
+    if(cached&&(cached.h.length||now-cached.last<5*60000))continue;
+    try{
+      const r=await fetch(BASE+'/summary?event='+e.id,{cache:'no-store'});
+      if(!r.ok){LINEUPS[ck]={h:[],a:[],last:now};continue;}
+      const d=await r.json();
+      const out={h:[],a:[],last:now};
+      (d.rosters||[]).forEach(ro=>{
+        const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
+        if(ro.homeAway==='home')out.h=names;else if(ro.homeAway==='away')out.a=names;
+      });
+      LINEUPS[ck]=out;
+    }catch(e2){LINEUPS[ck]={h:[],a:[],last:now};}
   }
 }
 
