@@ -681,11 +681,13 @@ function isRealTeam(n){return !!EN_FLAG[n];}
 // fecha LOCAL del estadio: ESPN da UTC; restando 8h cae siempre en el dia local (USA/Mex/Can)
 function localDate(iso){
   const t=new Date(iso).getTime()-8*3600*1000;
+  if(isNaN(t))return '00000000';
   return new Date(t).toISOString().slice(0,10).replace(/-/g,'');
 }
 
 function processEvents(events,map){
   (events||[]).forEach(ev=>{
+   try{
     const c=ev.competitions&&ev.competitions[0];if(!c)return;
     const h=(c.competitors||[]).find(x=>x.homeAway==='home');
     const a=(c.competitors||[]).find(x=>x.homeAway==='away');
@@ -704,37 +706,53 @@ function processEvents(events,map){
       KO_EVENTS[evd+'|'+hn+'|'+an]=ko;
       if(status==='post'){SAVED.ko[evd+'|'+hn+'|'+an]=ko;}
     }
+   }catch(e){/* evento malformado: lo saltamos sin romper el resto */}
   });
 }
 
 async function fetchScores(){
   let map={};
-  try{
-    const r=await fetch(BASE+'/scoreboard?dates=20260611-20260719&limit=400',{cache:'no-store'});
-    if(!r.ok)throw 0;
-    const d=await r.json();
-    processEvents(d.events,map);
-    document.getElementById('sync').textContent='Actualizado: '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    document.getElementById('sync').textContent='Sin conexion — usando resultados guardados';
+  async function fetchInto(url){
+    try{
+      const r=await fetch(url,{cache:'no-store'});
+      if(!r.ok)return false;
+      const d=await r.json();
+      processEvents(d.events,map);
+      return true;
+    }catch(e){return false;}
   }
-  // red de seguridad: dias pasados sin resultado -> consulta individual
-  const today=new Date().toISOString().slice(0,10).replace(/-/g,'');
+  function dkeyOf(d){return d.toISOString().slice(0,10).replace(/-/g,'');}
+  const now=new Date();
+  const hoy=dkeyOf(now);
+  const ayer=dkeyOf(new Date(now.getTime()-86400000));
+  const antier=dkeyOf(new Date(now.getTime()-2*86400000));
+
+  // 1) dias recientes uno a uno (lo mas fiable de ESPN)
+  let ok=false;
+  ok=(await fetchInto(BASE+'/scoreboard?dates='+hoy))||ok;
+  ok=(await fetchInto(BASE+'/scoreboard?dates='+ayer))||ok;
+  ok=(await fetchInto(BASE+'/scoreboard?dates='+antier))||ok;
+  // 2) rango completo como complemento (para eliminatorias futuras y dias antiguos)
+  ok=(await fetchInto(BASE+'/scoreboard?dates=20260611-20260719&limit=400'))||ok;
+
+  // 3) dias pasados que sigan sin resultado -> consulta individual
   const missingDays=new Set();
   MATCHES.forEach((m,i)=>{
-    const dkey=m.iso.replace(/-/g,'');
-    if(dkey>=today)return;
+    const dk=m.iso.replace(/-/g,'');
+    if(dk>=hoy)return;
     if(SAVED.results[i])return;
     const k1=norm(m.eh)+'|'+norm(m.ea),k2=norm(m.ea)+'|'+norm(m.eh);
     if(map[k1]||map[k2])return;
-    missingDays.add(dkey);
+    missingDays.add(dk);
   });
-  for(const dkey of [...missingDays].slice(0,8)){
-    try{
-      const r=await fetch(BASE+'/scoreboard?dates='+dkey,{cache:'no-store'});
-      if(r.ok){const d=await r.json();processEvents(d.events,map);}
-    }catch(e){}
+  for(const dk of [...missingDays].slice(0,8)){
+    await fetchInto(BASE+'/scoreboard?dates='+dk);
   }
+
+  document.getElementById('sync').textContent=ok
+    ?'Actualizado: '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})
+    :'Sin conexion con ESPN — usando resultados guardados';
+
   Object.entries(SAVED.ko||{}).forEach(([k,v])=>{if(!KO_EVENTS[k])KO_EVENTS[k]=v;});
   const prev=LIVE;
   LIVE=MATCHES.map((m,i)=>{
@@ -744,7 +762,6 @@ async function fetchScores(){
     else if(map[k2]){const x=map[k2];rec={status:x.status,hs:x.as,as:x.hs,clock:x.clock};}
     if(rec&&rec.status==='post'){SAVED.results[i]={hs:rec.hs,as:rec.as};}
     if(!rec&&SAVED.results[i]){rec={status:'post',hs:SAVED.results[i].hs,as:SAVED.results[i].as};}
-    // anti-parpadeo: si la API omite un partido que estaba en juego o acabado, conserva el dato anterior
     if(!rec&&prev[i]&&(prev[i].status==='in'||prev[i].status==='post'))rec=prev[i];
     return rec;
   });
@@ -774,11 +791,11 @@ async function refresh(){
   await fetchScores();
   processKnockouts();
   await fetchScorers();
-  renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();renderNews();
+  [renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 }
 
 initSel();
-renderMatches();renderKnockouts();renderDaily();renderPreds();renderBets();renderRanking();renderNews();
+[renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 refresh();
 setInterval(refresh,60000);
 </script>
