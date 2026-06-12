@@ -77,6 +77,11 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 .award .av{font-size:.6rem;color:#4a6a8a;margin-top:.2rem}
 .share-btn{background:#152d4a;border:1px solid #1e3a5a;color:#8faabf;border-radius:5px;padding:.3rem .6rem;font-size:.64rem;cursor:pointer}
 .share-btn:active{background:#1e3a5a}
+.news.esquela{border-left-color:#555;background:#121212;border-color:#333}
+.news.esquela .nh{color:#bbb;font-family:Georgia,serif}
+.news.esquela .nb{color:#999;font-style:italic}
+.news.rueda{border-left-color:#3498db;background:#0d1722}
+.news.rueda .nh{color:#7ec3ee}
 .news.cafe{border-left-color:#b5651d;background:#1c140d}
 .news.cafe .nh{color:#e8b380}
 .news.cafe .nb{color:#c9b8a8;font-size:.74rem}
@@ -788,6 +793,173 @@ function buildNews(){
       b:`${onces}<br><br>${vacile}`});
   });
 
+  // ── ⚰️ ESQUELAS: muere el campeón pronosticado de alguien ──
+  {
+    // eliminados: perdedores de cruces KO terminados + campeones que no llegan a 16avos
+    const elim={}; // teamEn -> {fecha:'YYYY-MM-DD', ronda:'octavos de final', verdugo:'croacia'}
+    Object.values(KO_EVENTS).forEach(e=>{
+      if(e.status!=='post'||!e.winner)return;
+      const loser=e.winner===e.h?e.a:e.h;
+      const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);
+      const dia=e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6);
+      const ronda=rd?(rd.key==='fin'?'la final':rd.key==='third'?'el partido por el bronce':rd.label.toLowerCase()):'eliminatorias';
+      if(rd&&rd.key==='third')return; // perder el 3er puesto no elimina ilusiones de campeon (ya estaban muertas)
+      elim[loser]={fecha:dia,ronda,verdugo:e.winner,final:rd&&rd.key==='fin'};
+    });
+    if(QUALIFIED.r32){
+      ALL_TEAMS.forEach(t=>{
+        if(!QUALIFIED.r32.has(t)&&!elim[t])elim[t]={fecha:'2026-06-28',ronda:'la fase de grupos',verdugo:null,final:false};
+      });
+    }
+    PLAYERS.forEach((p,j)=>{
+      const ch=teamEn(PICKS.champ[j]||'');
+      if(!ch||!elim[ch])return;
+      const ev=elim[ch];
+      const equipo=EN_ES[ch]||PICKS.champ[j];
+      const verdugo=ev.verdugo?(EN_ES[ev.verdugo]||ev.verdugo):null;
+      const s='esq'+p+ch;
+      const causa=ev.final
+        ?`Falleció en la mismísima final, a un paso de la gloria, que es la forma más cruel de morir que existe`
+        :verdugo
+          ?`Falleció en ${ev.ronda}, a manos de ${verdugo}, ${pick(['sin previo aviso y con nocturnidad','con violencia innecesaria','ante la mirada impotente de su dueño','de forma fulminante y televisada'],s+'c')}`
+          :`Falleció en ${ev.ronda}, sin llegar siquiera a las eliminatorias, que ya es morir con poca épica`;
+      items.push({k:ev.fecha+'c'+p,c:'esquela',m:`Esquelas · ${fmtDay(ev.fecha)}`,
+        t:pick([
+          `⚰️ ESQUELA — Las esperanzas mundialistas de ${p} (12 de junio – ${parseInt(ev.fecha.slice(8))} de ${ev.fecha.slice(5,7)==='06'?'junio':'julio'})`,
+          `⚰️ D.E.P. — La apuesta de campeón de ${p}, que en gloria esté`,
+          `⚰️ OBITUARIO — ${equipo}, campeón soñado de ${p}, nos ha dejado`,
+        ],s+'t'),
+        b:pick([
+          `${causa} la apuesta de campeón de ${p}: ${equipo}. Deja huérfanos 20 puntos que ya nunca llegarán y un cuadro de eliminatorias en estado vegetativo. La familia (sus 14 compañeros de Porra) no ruega oraciones: ruega cachondeo. El funeral se celebrará en el grupo de WhatsApp, con barra libre de capturas. D.E.P. (Descanse En Pronósticos).`,
+          `${causa} ${equipo}, el campeón que ${p} eligió un día de mayo con una seguridad que hoy resulta conmovedora. Le sobreviven un puñado de apuestas menores en estado crítico y un orgullo que ya no levanta cabeza. Se ruega a los asistentes no preguntar a ${p} "¿qué tal tu campeón?". Se ruega, pero se va a preguntar igual.`,
+          `${causa} la gran apuesta de ${p}. ${equipo} se va del Mundial y se lleva consigo 20 puntos, la ilusión de junio y cualquier autoridad de ${p} para opinar de fútbol en lo que queda de año. Capilla ardiente: la pestaña de Apuestas, donde el equipo aparece tachado en rojo para la posteridad. No flores: pantallazos.`,
+          `${causa} el sueño de ${p}, que veía a ${equipo} levantando la Copa el 19 de julio. La autopsia revela exceso de confianza y déficit de criterio, cuadro clínico habitual en esta Porra. En señal de duelo, ${p} guardará silencio en el grupo durante 48 horas. Es lo que esperamos todos, al menos.`,
+          `${causa} ${equipo} y, con él, el plan maestro de ${p}. La redacción recuerda que en mayo lo describió como "apuesta segura". Seguro estaba lo de hoy: el funeral. Que la tierra (y los 20 puntos) le sean leves.`,
+          `${causa} la candidatura de ${equipo}, con ${p} como único deudo oficial. El velatorio será breve porque hay más partidos, pero el luto de su ranking será largo, larguísimo. D.E.P.`,
+        ],s+'b')});
+    });
+  }
+
+  // ── 🚨 DETECTOR DE TRAIDORES: cada partido de España ──
+  finished.forEach(i=>{
+    const m=MATCHES[i];
+    if(m.home!=='España'&&m.away!=='España')return;
+    const lv=LIVE[i];
+    const hs=parseInt(lv.hs),as=parseInt(lv.as);
+    const espGana=(m.home==='España'&&hs>as)||(m.away==='España'&&as>hs);
+    const espSign=m.home==='España'?'1':'2';
+    const traidores=[],traidoresPred=[];
+    PLAYERS.forEach((p,j)=>{
+      const pred=m.preds[j];
+      if(!pred||!pred.includes('|'))return;
+      if(pred.split('|')[0]!==espSign){traidores.push(p);traidoresPred.push(p+' ('+pred.split('|')[1]+')');}
+    });
+    const rival=m.home==='España'?m.away:m.home;
+    const s='trai'+m.code;
+    const meta=`Detector de traidores · España ${m.home==='España'?hs+'-'+as:as+'-'+hs} ${rival} · ${fmtDay(m.iso)}`;
+    if(!traidores.length){
+      items.push({k:m.iso+'b'+i+'tr',c:'',m:meta,
+        t:`🚨 DETECTOR DE TRAIDORES: hoy no hay. Unanimidad patriótica en la Porra`,
+        b:pick([
+          `Los 15 pronosticaron victoria de España. Conmovedor. Estadísticamente sospechoso, pero conmovedor. La Brigada Patriótica archiva el expediente sin detenidos, por esta vez.`,
+          `Quince quinielas, quince victorias de España. O mucho patriotismo o cero personalidad. La redacción apuesta por lo segundo, pero hoy lo deja pasar.`,
+        ],s+'u')});
+    } else if(espGana){
+      items.push({k:m.iso+'b'+i+'tr',c:'breaking',m:meta,
+        t:pick([
+          `🚨 TRAIDORES IDENTIFICADOS: ${lista(traidores)} dudaron de España. España no dudó de humillarles`,
+          `🚨 DETECTOR DE TRAIDORES: ${traidores.length} detenido${traidores.length>1?'s':''}. ${lista(traidores)}, a disposición de la afición`,
+        ],s+'t'),
+        b:pick([
+          `${lista(traidoresPred)} pronosticaron contra la Roja, y la Roja respondió ganando. La Brigada Patriótica de la Porra ya ha sido informada. Se ruega no sentarse a su lado en el bar y, sobre todo, no dejarles tocar el mando cuando juegue España.`,
+          `Mientras 11 jugadores se dejaban el alma con la camiseta de España, ${lista(traidores)} apostaba${traidores.length>1?'n':''} contra ella desde el sofá. Ni puntos ni honor: la derrota completa. Sus nombres quedan inscritos en el Registro de Traidores de la Porra, tomo I, página de hoy.`,
+          `La traición salió cara: ${lista(traidores)} ni acertó ni puede mirar a la cara al grupo. Recordamos que vender a España cotiza a cero puntos y a vergüenza perpetua. Bienvenidos al registro.`,
+        ],s+'b')});
+    } else {
+      items.push({k:m.iso+'b'+i+'tr',c:'breaking',m:meta,
+        t:`🚨 LO PEOR HA PASADO: ${lista(traidores)} traicionó a España... y tenía razón`,
+        b:pick([
+          `España no ganó y ${lista(traidores)} lo había pronosticado. Tener razón traicionando a tu selección es la peor versión de tener razón: los puntos vienen manchados. El grupo les felicita con los dientes apretados y la mirada en el suelo.`,
+          `El traidor acertó, que es como ganar un juicio contra tu madre: técnicamente una victoria, moralmente un escándalo. ${lista(traidores)} suma${traidores.length>1?'n':''} puntos y pierde${traidores.length>1?'n':''} la patria potestad sobre el mando de la tele los días de España.`,
+        ],s+'b2')});
+    }
+  });
+
+  // ── 🎤 RUEDA DE PRENSA del peor del día ──
+  {
+    const days2=[...new Set(finished.map(i=>MATCHES[i].iso))];
+    days2.forEach(day=>{
+      const dayIdx=MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day);
+      if(!dayIdx.every(i=>LIVE[i]&&LIVE[i].status==='post'))return;
+      const dpts=PLAYERS.map((p,j)=>{
+        let pts=0;
+        dayIdx.forEach(i=>{
+          const lv=LIVE[i];
+          pts+=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+        });
+        return{name:p,pts};
+      }).sort((a,b)=>a.pts-b.pts);
+      const peores=dpts.filter(d=>d.pts===dpts[0].pts).map(d=>d.name);
+      const reo=pick(peores,'rp'+day);
+      const s='rueda'+day+reo;
+      const qa=[
+        `<b>Declaración inicial:</b> "El equipo está bien, los pronósticos llegarán." <b>Pregunta de la sala:</b> "¿Qué equipo? Usted juega solo y contra usted mismo."`,
+        `<b>Declaración inicial:</b> "Hay que analizar los errores con calma." <b>Pregunta de la sala:</b> "¿Cuántos siglos de calma calcula que necesita?"`,
+        `<b>Declaración inicial:</b> "El fútbol a veces es injusto." <b>Pregunta de la sala:</b> "¿Y las otras ${dpts[0].pts===0?'jornadas a cero':'veces'}, también fue el fútbol?"`,
+        `<b>Declaración inicial:</b> "Estoy tranquilo, confío en mi método." <b>Pregunta de la sala:</b> "¿Puede describir el método? Los forenses lo necesitan para el informe."`,
+        `<b>Declaración inicial:</b> "Esto es una carrera de fondo." <b>Pregunta de la sala:</b> "Va usted último. En las carreras de fondo eso también cuenta."`,
+        `<b>Declaración inicial:</b> "Vi venir el resultado, pero no lo puse." <b>Pregunta de la sala:</b> "Entonces no lo vio venir. Así funciona ver venir las cosas."`,
+        `<b>Declaración inicial:</b> "Mañana será otro día." <b>Pregunta de la sala:</b> "Sí, otro día de estos. Esa es justo la preocupación de su afición."`,
+        `<b>Declaración inicial:</b> "Prefiero no buscar excusas." <b>Pregunta de la sala:</b> "Lleva tres declaraciones seguidas que son excusas. ¿Esa era la cuarta?"`,
+        `<b>Declaración inicial:</b> "Los datos no reflejan mi conocimiento del juego." <b>Pregunta de la sala:</b> "Los datos son literalmente lo único que tenemos. Y le condenan."`,
+        `<b>Declaración inicial:</b> "Me quedo con las sensaciones." <b>Pregunta de la sala:</b> "Las sensaciones no puntúan. Lo otro tampoco lo está haciendo, pero al menos existe."`,
+      ];
+      const cierre=pick([
+        `${reo} abandonó la sala.`,
+        `${reo} abandonó la sala sin responder, tropezando con el micrófono de salida.`,
+        `La comparecencia terminó cuando ${reo} alegó "problemas de agenda". Su agenda: vacía, como su casillero.`,
+        `${reo} pidió que la próxima rueda de prensa fuera por escrito. Denegado.`,
+        `Fin de la comparecencia. ${reo} salió por la puerta de atrás, que ya le conoce.`,
+      ],s+'c');
+      items.push({k:day+'y',c:'rueda',m:`Rueda de prensa · ${fmtDay(day)}`,
+        t:pick([
+          `🎤 ${reo} comparece tras su ${dpts[0].pts===0?'cero':'jornada para olvidar'}: "${pick(['El equipo está bien','Estoy tranquilo','Hay que seguir trabajando','No hay que volverse locos'],s+'q')}"`,
+          `🎤 RUEDA DE PRENSA: ${reo} da la cara tras la debacle. Más o menos`,
+        ],s+'t'),
+        b:`${pick(qa,s+'a1')}<br><br>${pick(qa.filter((x,xi)=>xi!==(h32(s+'a1')%qa.length)),s+'a2')}<br><br>${cierre}`});
+    });
+  }
+
+  // ── 🥄 ANTICAMPEONATO: cambios de Cuchara de Palo ──
+  {
+    const days3=[...new Set(finished.map(i=>MATCHES[i].iso))].sort();
+    let prevCol=null;
+    days3.forEach((day,di)=>{
+      const acum=PLAYERS.map((p,j)=>{
+        let pts=0;
+        finished.forEach(i=>{
+          if(MATCHES[i].iso>day)return;
+          const lv=LIVE[i];
+          pts+=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+        });
+        return{name:p,pts};
+      }).sort((a,b)=>a.pts-b.pts);
+      const col=acum[0].pts===acum[1].pts?prevCol||acum[0].name:acum[0].name;
+      if(di>=2&&prevCol&&col!==prevCol){
+        items.push({k:day+'y2',c:'',m:`Anticampeonato · ${fmtDay(day)}`,
+          t:pick([
+            `🥄 RELEVO EN EL ANTICAMPEONATO: ${col} arrebata la Cuchara de Palo a ${prevCol}`,
+            `🥄 ${prevCol} pierde el liderato del Anticampeonato. ${col} asume el cargo con resignación`,
+          ],'anti'+day),
+          b:pick([
+            `${prevCol} abandona el farolillo rojo tras una jornada inexplicablemente digna, y ${col} hereda la Cuchara de Palo con todos los honores. La lucha por el título de abajo está más viva que muchas quinielas de arriba.`,
+            `Cambio en la cola: ${col} es el nuevo líder del Anticampeonato. ${prevCol}, ya ex-colista, declaró sentirse "raro" mirando la tabla y viendo a alguien por debajo. Se le pasará.`,
+          ],'anti2'+day)});
+      }
+      prevCol=col;
+    });
+  }
+
   // ── 👑 DESTRONAMIENTOS en el Salón de la Fama ──
   if(finished.length>=3){
     [AWARDS[0],AWARDS[1]].forEach(a=>{  // Oraculo y Muro generan noticia
@@ -1295,7 +1467,34 @@ function renderFama(){
       <div class="ad">${a.coment(name,'fam'+a.id+name)}</div>
       <div class="av">Calculado sobre ${f.nPartidos} partido${f.nPartidos!==1?'s':''}</div>
     </div></div>`;
-  }).join('');
+  }).join('')+cucharaCard(f);
+}
+function cucharaCard(f){
+  // 🥄 ANTICAMPEONATO: lider de la tabla invertida (puntos totales con bonus)
+  const acum=PLAYERS.map((p,j)=>{
+    let pts=0;
+    MATCHES.forEach((m,i)=>{
+      const lv=LIVE[i];
+      if(!lv||lv.status!=='post')return;
+      pts+=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+    });
+    return{name:p,pts:pts+bonusPoints(j)};
+  }).sort((a,b)=>a.pts-b.pts);
+  if(!f.nPartidos)return '';
+  const col=acum[0],sub=acum[1];
+  return `<div class="award" style="border-color:#8b5a2b">
+    <span class="ae">🥄</span>
+    <div style="flex:1">
+      <div class="at" style="color:#cd853f">ANTICAMPEONATO · <span style="color:#6a8faa;font-weight:400">líder de la Cuchara de Palo</span></div>
+      <div class="ah">${col.name} <span style="font-size:.66rem;color:#cd853f;font-weight:400">(${col.pts} pts, ${sub.pts-col.pts===0?'empatado con':'a '+(sub.pts-col.pts)+' de'} ${sub.name})</span></div>
+      <div class="ad">${pick([
+        col.name+' lidera la otra clasificación, la que nadie quiere ganar y él domina con autoridad. La épica de la cola también es épica, dicen. Lo dicen los de la cola.',
+        'La Cuchara de Palo tiene dueño: '+col.name+', que defiende el farolillo rojo con una solidez que ya quisiera para sus quinielas. '+sub.name+' aprieta desde atrás. Bueno, desde delante. Es confuso ahí abajo.',
+        col.name+' manda en el Anticampeonato. La redacción cubre esta lucha por el título con la misma pasión que la de arriba: aquí también hay sufrimiento, solo que sin recompensa.',
+      ],'cuch'+col.name)}</div>
+      <div class="av">La Cuchara se entrega el 19 de julio. Cena pagada por el campeón... del Anticampeonato, claro.</div>
+    </div>
+  </div>`;
 }
 
 // ── 📋 COMPARTIR A WHATSAPP ──────────────────────────
