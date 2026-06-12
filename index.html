@@ -207,6 +207,20 @@ MATCHES.forEach(m=>{
   GROUP_KEYS.add(norm(m.eh)+'|'+norm(m.ea));
   GROUP_KEYS.add(norm(m.ea)+'|'+norm(m.eh));
 });
+// RED DE SEGURIDAD: canonicaliza cualquier nombre de ESPN contra los 48 equipos oficiales.
+// Si ESPN usa un alias imprevisto, se empareja por similitud en vez de perderse.
+const ALL_TEAMS=Object.keys(EN_FLAG);
+function compact(s){return s.split(' ').join('');}
+function canonical(n){
+  if(EN_FLAG[n])return n;            // coincidencia exacta
+  if(n.length<5)return n;            // demasiado corto para fuzzy seguro
+  const cn=compact(n);
+  for(const t of ALL_TEAMS){
+    const ct=compact(t);
+    if(ct.includes(cn)||cn.includes(ct))return t;  // contenido uno en otro
+  }
+  return n;                          // desconocido (TBD, etc.): se queda como esta
+}
 // limpia datos corruptos guardados por versiones anteriores
 // (equipos TBD o partidos de grupos mal clasificados como eliminatorias)
 Object.keys(SAVED.ko||{}).forEach(k=>{
@@ -703,7 +717,7 @@ function processEvents(events,map){
     const h=(c.competitors||[]).find(x=>x.homeAway==='home');
     const a=(c.competitors||[]).find(x=>x.homeAway==='away');
     if(!h||!a)return;
-    const hn=norm(h.team.displayName),an=norm(a.team.displayName);
+    const hn=canonical(norm(h.team.displayName)),an=canonical(norm(a.team.displayName));
     const status=statusOf(c);
     const rec={status,hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
     map[hn+'|'+an]=rec;
