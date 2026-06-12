@@ -69,6 +69,17 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 .news .nm{font-size:.58rem;color:#4a6a8a;margin-top:.35rem;text-transform:uppercase;letter-spacing:.05em}
 .news.breaking{border-left-color:#e85d4a}
 .news.breaking .nm::before{content:"🔴 ÚLTIMA HORA · ";color:#e85d4a}
+.award{background:#0e2040;border:1px solid #1e3a5a;border-radius:7px;margin-bottom:.5rem;padding:.6rem .8rem;display:flex;gap:.7rem;align-items:flex-start}
+.award .ae{font-size:1.6rem;line-height:1}
+.award .at{font-size:.78rem;font-weight:700;color:#c9a227}
+.award .ah{font-size:.95rem;font-weight:700;color:#fff;margin:.15rem 0}
+.award .ad{font-size:.66rem;color:#8faabf;line-height:1.45}
+.award .av{font-size:.6rem;color:#4a6a8a;margin-top:.2rem}
+.share-btn{background:#152d4a;border:1px solid #1e3a5a;color:#8faabf;border-radius:5px;padding:.3rem .6rem;font-size:.64rem;cursor:pointer}
+.share-btn:active{background:#1e3a5a}
+.news.matinal{border-left-color:#27ae60;background:#0e1f18}
+.news.matinal .nh{color:#7ee2a8}
+.news.matinal .nb{font-size:.74rem;color:#a8c5b8}
 .news.cronica{border-left-color:#9b59b6;background:#13182f}
 .news.cronica .nh{color:#d8b4f0}
 .news.cronica .nb{font-size:.74rem;color:#a8b8cf}
@@ -90,6 +101,7 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <button onclick="show('pronos',this)">Pronosticos</button>
   <button onclick="show('apuestas',this)">Apuestas</button>
   <button onclick="show('noticias',this)">📰 Porra News</button>
+  <button onclick="show('fama',this)">🏅 Salón</button>
   <button onclick="show('ranking',this)">🏆 Ranking</button>
 </nav>
 
@@ -120,7 +132,13 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
   <div class="note">📰 Porra News — periodismo de máxima rigurosidad. Las noticias se generan automáticamente con cada resultado.</div>
 </div>
 
+<div id="fama" class="page">
+  <div id="famaList"></div>
+  <div class="note">🏅 Salón de la Fama y la Vergüenza — premios en disputa permanente, se actualizan con cada partido. Los destronamientos salen en Porra News.</div>
+</div>
+
 <div id="ranking" class="page">
+  <button class="share-btn" onclick="copyRanking()" style="margin-bottom:.6rem">📋 Copiar ranking para WhatsApp</button>
   <table class="rank">
     <thead><tr><th>#</th><th>Quinielista</th><th class="rc">Exact</th><th class="rc">Signo</th><th class="rc">Bonus</th><th style="text-align:right">Pts</th></tr></thead>
     <tbody id="rankBody"></tbody>
@@ -439,6 +457,18 @@ function lista(names){
   return names.slice(0,-1).join(', ')+' y '+names[names.length-1];
 }
 
+// nivel futbolistico de cada seleccion (1=top mundial, 5=cenicienta)
+const TIER={'España':1,'Francia':1,'Argentina':1,'Inglaterra':1,'Brasil':1,'Portugal':1,'Alemania':1,'Países Bajos':1,
+'Bélgica':2,'Croacia':2,'Uruguay':2,'Colombia':2,'México':2,'Estados Unidos':2,'Japón':2,'Marruecos':2,'Suiza':2,'Noruega':2,
+'Senegal':3,'Corea del Sur':3,'Australia':3,'Austria':3,'Ecuador':3,'Turquía':3,'Canadá':3,'Argelia':3,'Egipto':3,'Costa de Marfil':3,'Suecia':3,'Escocia':3,'Paraguay':3,'Irán':3,'Túnez':3,
+'Catar':4,'Arabia Saudita':4,'Sudáfrica':4,'Ghana':4,'Panamá':4,'Uzbekistán':4,'RD Congo':4,'Jordania':4,'Bosnia y Herzegovina':4,'República Checa':4,'Nueva Zelanda':4,'Irak':4,
+'Cabo Verde':5,'Curazao':5,'Haití':5};
+const ANFITRIONES=['México','Estados Unidos','Canadá'];
+function madridNow(){
+  try{return new Date().toLocaleString('sv-SE',{timeZone:'Europe/Madrid'});}
+  catch(e){return new Date().toISOString().slice(0,19).replace('T',' ');}
+}
+
 function buildNews(){
   const items=[];
   const finished=[];
@@ -480,7 +510,7 @@ function buildNews(){
     const pringao2=fl.length>1?pick(fl.filter(x=>x!==pringao),seed+'pr2'):null;
 
     if(ex.length===1){
-      items.push({c:'breaking',m:meta,
+      items.push({k:m.iso+'b'+i,c:'breaking',m:meta,
         t:pick([
           `Abren expediente a ${ex[0]} por clavar el ${res}: "Nadie acierta eso sin ayuda de las altas esferas"`,
           `${ex[0]} predice el ${res} exacto y ya se pasea por el grupo como si hubiera ganado el Mundial él solo`,
@@ -498,7 +528,7 @@ function buildNews(){
           `Comparativa odiosa del día: ${ex[0]} suma 4 puntos en 90 minutos. ${pringao||'Otros'} lleva${pringao?'':'n'} el mismo tiempo viendo el fútbol y aún no sabe${pringao?'':'n'} ni cómo se cuenta un gol.`,
         ],seed+'e2')});
     } else if(ex.length>1){
-      items.push({c:'breaking',m:meta,
+      items.push({k:m.iso+'b'+i,c:'breaking',m:meta,
         t:pick([
           `${lista(ex)} clavan el ${res} y forman el nuevo club de listillos de la Porra`,
           `${lista(ex)} aciertan el exacto a la vez. O son genios o se copian. Apostamos por lo segundo`,
@@ -509,7 +539,7 @@ function buildNews(){
           `${pringao?'Especialmente doloroso para '+pringao+', que vio el mismo partido, vive en el mismo planeta y aun así puso lo que puso.':'El resto, a llorar a la lloreria.'}`,
         ],seed+'me2')});
     } else if(sg.length===0){
-      items.push({c:'breaking',m:meta,
+      items.push({k:m.iso+'b'+i,c:'breaking',m:meta,
         t:pick([
           `CATÁSTROFE NACIONAL: los 15 cerebros de la Porra fallan el ${m.home}–${m.away}. Ni uno. Cero.`,
           `El ${m.home}–${m.away} acaba ${res} y deja a la Porra en ridículo internacional: 15 pronósticos, 15 desastres`,
@@ -520,7 +550,7 @@ function buildNews(){
           `Una paloma picoteando una quiniela tendría mejor porcentaje. Y la paloma no presume de "ver mucho fútbol".`,
         ],seed+'f2')});
     } else if(fl.length>=10){
-      items.push({c:'',m:meta,
+      items.push({k:m.iso+'b'+i,c:'',m:meta,
         t:pick([
           `${res} en el ${m.home}–${m.away}: solo ${lista(sg)} se salvan de la quema`,
           `El ${m.home}–${m.away} se lleva por delante a ${fl.length} quinielistas. ${lista(sg)} miran desde arriba con desprecio`,
@@ -532,7 +562,7 @@ function buildNews(){
           `${pringao}${pringao2?' y '+pringao2:''} lideran la lista de damnificados. En sus casas ya les esconden el móvil cuando hay que rellenar la quiniela.`,
         ],seed+'f4')});
     } else if(goleada){
-      items.push({c:'',m:meta,
+      items.push({k:m.iso+'b'+i,c:'',m:meta,
         t:pick([
           `${ganador} endosa un ${res} y revienta las quinielas prudentes: ${ex.length?lista(ex)+' lo vio venir':'nadie puso tanto gol'}`,
           `Festival de goles (${res}) en el ${m.home}–${m.away}. ${pringao?pringao+' había puesto un empate. Un empate. Hay que verlo para creerlo':'Las quinielas, como siempre, mucho más aburridas que el fútbol'}`,
@@ -543,7 +573,7 @@ function buildNews(){
           `Goleadas así separan a los que ven fútbol de los que dicen que ven fútbol. La Porra está llena de los segundos.`,
         ],seed+'g2')});
     } else if(ganador&&(m.home==='España'||m.away==='España')){
-      items.push({c:'',m:meta,
+      items.push({k:m.iso+'b'+i,c:'',m:meta,
         t:ganador==='España'
           ?pick([
             `España gana ${res} y los 15 de la Porra se ponen medallas: "lo dije yo primero"`,
@@ -557,7 +587,7 @@ function buildNews(){
           ?`Acertar que gana España es como acertar que mañana sale el sol: ${lista(sg.slice(0,4))} y compañía rascan su puntito de signo y lo celebran como una Champions.`
           :`Las quinielas del grupo daban a España poco menos que campeona del partido por 4-0. La realidad, como siempre, sin avisar. ${pringao?pringao+', el más optimista, ya no coge el teléfono.':''}`});
     } else {
-      items.push({c:'',m:meta,
+      items.push({k:m.iso+'b'+i,c:'',m:meta,
         t:pick([
           `${res} en el ${m.home}–${m.away}: ${lista(sg.slice(0,3))}${sg.length>3?' y otros '+(sg.length-3):''} aciertan el signo y ya se creen Rafa Honigstein`,
           `El ${m.home}–${m.away} acaba ${res} y reparte puntitos de consolación a ${sg.length} quinielistas`,
@@ -581,7 +611,7 @@ function buildNews(){
     PLAYERS.forEach((p,j)=>{
       const r=rachaCeros(j,m.iso);
       if(r===3&&pick([true,false],seed+p)){ // solo al cumplir 3, y no siempre, para no saturar
-        items.push({c:'',m:`Especial rachas · ${fmtDay(m.iso)}`,
+        items.push({k:m.iso+'x'+p,c:'',m:`Especial rachas · ${fmtDay(m.iso)}`,
           t:pick([
             `${p} cumple ${r} jornadas seguidas sin puntuar y entra oficialmente en la UCI de la Porra`,
             `La sequía de ${p} alcanza las ${r} jornadas. Científicos de todo el mundo quieren estudiar su cerebro`,
@@ -658,7 +688,7 @@ function buildNews(){
       `Cerramos edición. Si mañana alguno acierta algo, abriremos con ello. No esperamos abrir con ello.`,
     ],seed+'c');
 
-    items.push({c:'cronica',m:`Crónica de la jornada · ${fmtDay(day)}`,
+    items.push({k:day+'z',c:'cronica',m:`Crónica de la jornada · ${fmtDay(day)}`,
       t:pick([
         `CRÓNICA: ${fmtDay(day)} — el día en que ${top.pts>0?lista(cotop)+' miró al resto por encima del hombro':'la Porra tocó fondo'}`,
         `LA CRÓNICA FALTOSA: así fue el ${fmtDay(day)} en la Porra`,
@@ -667,21 +697,395 @@ function buildNews(){
       b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${cierre}`});
   });
 
+  // ── 👑 DESTRONAMIENTOS en el Salón de la Fama ──
+  if(finished.length>=3){
+    [AWARDS[0],AWARDS[1]].forEach(a=>{  // Oraculo y Muro generan noticia
+      let prev=null;
+      for(let k=3;k<=finished.length;k++){
+        const f=famaStats(k);
+        const h=holderMax(a.val(f),prev);
+        if(h!==null&&prev!==null&&h!==prev){
+          const mi=finished[k-1];
+          items.push({k:MATCHES[mi].iso+'b'+mi+'trono'+a.id,c:'breaking',
+            m:`Salón de la Fama · ${fmtDay(MATCHES[mi].iso)}`,
+            t:pick([
+              `👑 DESTRONADO: ${PLAYERS[prev]} pierde "${a.t}" a manos de ${PLAYERS[h]}`,
+              `👑 GOLPE DE ESTADO en el Salón: ${PLAYERS[h]} arrebata "${a.t}" a ${PLAYERS[prev]}`,
+            ],'tr'+a.id+k),
+            b:a.id==='oraculo'
+              ?`${PLAYERS[h]} ya prepara la mudanza al palacio. ${PLAYERS[prev]}, ex-Oráculo, vuelve con la plebe, donde francamente se le echaba de menos.`
+              :`${PLAYERS[h]} hereda El Muro con todos los honores de la vergüenza. ${PLAYERS[prev]} por fin puntuó algo y abandona el monumento. Se le recordará.`});
+        }
+        if(h!==null)prev=h;
+      }
+    });
+  }
+
+  // ── ⏱ PREVIA: 1 hora antes de cada partido, con alineaciones ──
+  const nowEp=Date.now();
+  MATCHES.forEach((m,i)=>{
+    const lv=LIVE[i];
+    if(!lv||!lv.ts)return;
+    if(nowEp<lv.ts-65*60000)return;        // aun falta mas de ~1h
+    const s='previa'+m.code+m.home;
+    const lu=LINEUPS[i];
+    const hayOnce=lu&&lu.h.length>=7&&lu.a.length>=7;
+    const onces=hayOnce
+      ?`<b>Once de ${m.home}:</b> ${lu.h.join(', ')}.<br><br><b>Once de ${m.away}:</b> ${lu.a.join(', ')}.`
+      :pick([
+        `Los onces aún no son oficiales. Los seleccionadores se lo piensan más que ${pick(PLAYERS,s+'q1')} su quiniela, que ya es decir... no, espera, ese la rellenó en el autobús.`,
+        `Alineaciones por confirmar. Tranquilos: saberlas tampoco les habría ayudado, las quinielas ya están entregadas y mal.`,
+        `Sin onces oficiales todavía. Da igual: ustedes pronosticaron sin saber ni en qué ciudad se jugaba.`,
+      ],s+'o');
+    // pronosticos del partido para el vacile
+    const cnt={};
+    const arriesgados=[];
+    PLAYERS.forEach((p,j)=>{
+      const pred=m.preds[j];
+      if(!pred||!pred.includes('|'))return;
+      const sc=pred.split('|')[1];
+      cnt[sc]=(cnt[sc]||[]).concat(p);
+      const[a,b]=sc.split('-').map(Number);
+      if(Math.abs(a-b)>=3)arriesgados.push(p+' ('+sc+')');
+    });
+    const masRep=Object.entries(cnt).sort((a,b)=>b[1].length-a[1].length)[0];
+    const vacile=pick([
+      `En una hora rueda el balón y, con él, las esperanzas de los ${masRep[1].length} genios que copiaron el ${masRep[0]} (${lista(masRep[1].slice(0,3))}${masRep[1].length>3?' y compañía':''}). La originalidad ha muerto y la enterraron ustedes.`,
+      `Cuenta atrás. El resultado más repetido es el ${masRep[0]}: si sale, empate técnico de mediocridad; si no sale, ${masRep[1].length} ridículos sincronizados. Gana la redacción en ambos casos.`,
+      `Queda una hora para que la realidad examine sus pronósticos. La realidad suspende a este grupo con una regularidad admirable.`,
+      `${arriesgados.length?'Atentos a los kamikazes del día: '+lista(arriesgados.slice(0,2))+'. El valor se premia. La insensatez, no, y esto huele a lo segundo.':'Hoy nadie se ha atrevido con una goleada. Grupo de valientes, como siempre.'}`,
+      `Última hora para cambiar de equipo favorito y fingir que siempre fue así. Sus quinielas, en cambio, quedaron grabadas para la posteridad y la humillación.`,
+      `Los jugadores calientan sobre el césped. Ustedes calienten la silla, que es lo suyo, y recen por ese ${masRep[0]} que pusieron ${masRep[1].length} a la vez.`,
+      `Una hora. Sesenta minutos. Lo que tarda ${pick(PLAYERS,s+'v7')} en explicar por qué falló el último partido, y eso que la explicación es corta: no tiene ni idea.`,
+    ],s+'v');
+    items.push({k:m.iso+'a9'+m.code,c:'',m:`⏱ Previa · ${m.home} vs ${m.away}${lv.t?' · '+lv.t:''}`,
+      t:pick([
+        `⏱ A UNA HORA: ${m.hf} ${m.home} – ${m.af} ${m.away}${hayOnce?'. Ya hay onces':''}`,
+        `⏱ PREVIA: ${m.hf} ${m.home} – ${m.af} ${m.away}, último aviso para los nerviosos`,
+        `⏱ Calentando: ${m.hf} ${m.home} – ${m.af} ${m.away}${lv.t?' a las '+lv.t:''}`,
+      ],s+'t'),
+      b:`${onces}<br><br>${vacile}`});
+  });
+
+  // ── ☕ ANÁLISIS MATINAL (visible desde las 9:00 hora de Madrid) ──
+  const mn=madridNow();
+  const hoyM=mn.slice(0,10), horaM=parseInt(mn.slice(11,13));
+
+  // texto aprobado para el 12 de junio, tal cual
+  const PREVIEW_FIJO={'2026-06-12':{
+    t:'☕ ANÁLISIS MATINAL · Viernes 12 de junio',
+    b:`Buenos días a los 15 ciegos guiando a otros ciegos. La redacción ya está despierta, cosa que no puede decirse del criterio futbolístico de este grupo. Hoy hay dos partidos, es decir, dos nuevas oportunidades de hacer el ridículo en horario internacional.<br><br><b>🏟️ Los partidos de hoy</b><br><br><b>Canadá – Bosnia y Herzegovina</b> (Toronto, 21:00 hora española). Análisis serio, que de algo tiene que servir esta sección: Canadá juega en casa, con su gente, y llega con la mejor generación de su historia (Alphonso Davies y David son palabras mayores). Bosnia es rocosa y fea de ver, que es su mayor virtud. La redacción ve a Canadá claramente más fuerte: si esto no acaba en victoria local, devolvemos el carnet de periodistas.<br><br>El consenso de la Porra: 10 de 15 ven ganar a Canadá, con el 2-0 y el 1-0 como apuestas estrella. Mención especial para <b>Iker y Liza</b>, los únicos que ven ganar a Bosnia (1-2 ambos): o han visto algo que el resto del planeta no ha visto, o han rellenado la quiniela con el móvil del revés. Y atención a <b>Asier</b> con su 0-0, el resultado oficial de quien no quiere mojarse ni con manguera.<br><br><b>Estados Unidos – Paraguay</b> (Los Ángeles, 03:00 de la madrugada). Para los que no tengan vida, que en este grupo son mayoría. EEUU es anfitrión, tiene a Pulisic y lleva un ciclo entero preparando este Mundial; Paraguay vuelve a un Mundial después de 16 años a base de garra y poco más. La redacción ve favorito claro a EEUU, aunque con los anfitriones nunca se sabe: la presión hace cosas raras, pregúntenle a cualquiera de ustedes un día de jornada.<br><br>Aquí el rebaño es aún más rebaño: 11 de 15 con EEUU, y el 2-1 repetido por cinco quinielistas distintos, originalidad cero. El único valiente es <b>Soler</b> con su 1-2 paraguayo. Valiente o inconsciente, la historia lo juzgará esta madrugada.<br><br><b>🎯 Las apuestas de la redacción</b><br><br>Favorito a puntuar hoy: el pelotón del 1, porque hasta un rebaño acierta cuando el camino es recto. Anti-favorito: <b>Iker</b>, que combina ver ganar a Bosnia con un 0-0 en el otro partido — dos decisiones que, juntas, deberían estudiarse en las facultades. Y ojo a <b>Berjano</b> y su 3-0 a EEUU: el optimismo es gratis, los puntos no.<br><br>Volvemos esta noche con la crónica y los nombres de los culpables. Siempre hay culpables.`
+  }};
+
+  function formaReciente(){
+    // puntos de cada jugador en los 2 ultimos dias completados
+    const doneDays=[...new Set(finished.map(i=>MATCHES[i].iso))].sort().slice(-2);
+    return PLAYERS.map((p,j)=>{
+      let pts=0;
+      finished.forEach(i=>{
+        if(!doneDays.includes(MATCHES[i].iso))return;
+        const lv=LIVE[i];
+        pts+=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+      });
+      return{name:p,pts};
+    });
+  }
+
+  function buildPreview(day){
+    if(PREVIEW_FIJO[day])return PREVIEW_FIJO[day];
+    const dayIdx=MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day);
+    if(!dayIdx.length)return null;
+    const s='prev'+day;
+
+    const intro=pick([
+      `Buenos días, supuestos aficionados al fútbol. La redacción madruga para que ustedes puedan fallar con conocimiento de causa.`,
+      `Arranca otro día de Mundial y la redacción, con su café, repasa lo que viene. Ustedes repasen sus quinielas, que viéndolas hay tela.`,
+      `Buenos días a todos, especialmente a los que van a perder puntos hoy, que estadísticamente son casi todos.`,
+      `La redacción saluda desde la cima del conocimiento futbolístico a los 15 habitantes del valle de la ignorancia.`,
+      `Café, periódico y vergüenza ajena: así empieza la mañana en Porra News repasando sus pronósticos de hoy.`,
+      `Otro amanecer mundialista. Los equipos preparan sus once; ustedes ya prepararon sus disparates hace semanas.`,
+      `Buenos días. Hoy hay fútbol del bueno y pronósticos de los suyos, que es otro género completamente distinto.`,
+      `La redacción abre el chiringuito matinal. Aviso: este análisis está hecho por gente que sí ve los partidos enteros.`,
+      `Se levanta el día y con él las esperanzas de la Porra, que suelen acostarse temprano y heridas.`,
+      `Análisis matinal en marcha. Spoiler: el fútbol volverá a demostrar hoy que no tiene nada que ver con lo que ustedes pusieron.`,
+    ],s+'i');
+
+    const bloques=dayIdx.map(i=>{
+      const m=MATCHES[i];
+      const lv=LIVE[i];
+      const hora=lv&&lv.t?` (${lv.t} hora española)`:'';
+      const th=TIER[m.home]||3, ta=TIER[m.away]||3;
+      const casa=ANFITRIONES.includes(m.home)?m.home:ANFITRIONES.includes(m.away)?m.away:null;
+      let fuerte,analisis;
+      if(th<ta-1||ta<th-1){
+        fuerte=th<ta?m.home:m.away;
+        const debil=fuerte===m.home?m.away:m.home;
+        analisis=pick([
+          `${fuerte} es muy superior sobre el papel; ${debil} viene a sacar fotos y a defender con diez. La redacción ve favorito clarísimo a ${fuerte}.`,
+          `Duelo de David contra Goliat, y David no trae ni tirachinas: ${fuerte} debería pasar por encima de ${debil}. Si no lo hace, escándalo.`,
+          `${fuerte} parte como favorito indiscutible. ${debil} confía en el milagro, que en los Mundiales existe, pero no abunda.`,
+          `Sobre el papel no hay color: ${fuerte} tiene plantilla, fondo de armario y pegada; ${debil} tiene ilusión, que está muy bien para los reportajes.`,
+          `La redacción lo tiene claro: ${fuerte} con autoridad. ${debil} aspira a perder por poco y volver a casa con la cabeza alta.`,
+          `${fuerte} favorito de libro. ${debil} necesitaría el partido de su vida y que ${fuerte} saliera dormido. Las dos cosas a la vez, complicado.`,
+        ],s+m.code+'a');
+      } else if(Math.abs(th-ta)<=1&&th<=2&&ta<=2){
+        fuerte=null;
+        analisis=pick([
+          `Partidazo de los de verdad: dos selecciones de nivel top y un duelo que podría ser de eliminatorias. La redacción no se moja... porque no hace falta, para eso están ustedes y sus quinielas temerarias.`,
+          `Choque de trenes. Aquí gana el que tenga el día, y eso no lo sabe ni la redacción ni desde luego ninguno de ustedes.`,
+          `Duelo igualadísimo entre dos aspirantes serias. El que acierte este, que lo enmarque.`,
+        ],s+m.code+'a');
+      } else {
+        fuerte=th<ta?m.home:ta<th?m.away:null;
+        analisis=pick([
+          `Partido más igualado de lo que parece. ${fuerte?fuerte+' parte con ligera ventaja':'Ni la redacción se atreve con un favorito claro'}, pero esto se decide por detalles.`,
+          `Duelo abierto${fuerte?', con '+fuerte+' un punto por encima':''}. El típico partido que rompe quinielas, o sea, las suyas.`,
+          `${fuerte?fuerte+' es algo mejor, pero poco':'Cara o cruz con césped'}. La redacción huele empate técnico y sorpresas.`,
+          `Equilibrio casi total${fuerte?', aunque '+fuerte+' llega mejor':''}. Partido trampa: apunten quién lo acierta, que mérito tendrá.`,
+        ],s+m.code+'a');
+      }
+      if(casa)analisis+=` Y ojo al factor casa: ${casa} juega ante su público, que empuja lo suyo.`;
+
+      // consenso de la Porra
+      const signos={'1':[],'X':[],'2':[]};
+      const scores={};
+      PLAYERS.forEach((p,j)=>{
+        const pred=m.preds[j];
+        if(!pred||!pred.includes('|'))return;
+        const[sg,sc]=pred.split('|');
+        if(signos[sg])signos[sg].push(p);
+        scores[sc]=(scores[sc]||[]).concat(p);
+      });
+      const may=Object.entries(signos).sort((a,b)=>b[1].length-a[1].length)[0];
+      const mayLabel=may[0]==='1'?'ganar a '+m.home:may[0]==='2'?'ganar a '+m.away:'el empate';
+      const minor=Object.entries(signos).filter(([k,v])=>v.length>0&&v.length<=2&&k!==may[0]);
+      const ceroceros=(scores['0-0']||[]);
+      let consenso=pick([
+        `La Porra dice: ${may[1].length} de 15 ven ${mayLabel}.`,
+        `El rebaño tiene opinión: ${may[1].length} de 15 apuestan por ${mayLabel}.`,
+        `Consenso del grupo (que no garantiza nada, ya lo saben): ${may[1].length} de 15 con ${mayLabel}.`,
+      ],s+m.code+'c');
+      minor.forEach(([k,v])=>{
+        const lbl=k==='1'?m.home:k==='2'?m.away:'el empate';
+        consenso+=' '+pick([
+          `${lista(v)} va${v.length>1?'n':''} a contracorriente con ${lbl}: o genialidad o lo de siempre, y su historial apunta a lo de siempre.`,
+          `Francotirador${v.length>1?'es':''} del día: ${lista(v)} con ${lbl}. Las gestas se escriben así. Los ridículos, también.`,
+          `${lista(v)} ve${v.length>1?'n':''} ${lbl} cuando nadie más lo ve. Eso tiene un nombre, y no es "visionario".`,
+        ],s+m.code+'m'+k);
+      });
+      if(ceroceros.length){
+        consenso+=' '+pick([
+          `Y el premio a la cobardía pronosticada: ${lista(ceroceros)} con el 0-0, el resultado de quien no quiere mojarse ni con manguera.`,
+          `${lista(ceroceros)} pone${ceroceros.length>1?'n':''} 0-0, que es como no contestar al examen y esperar aprobar.`,
+        ],s+m.code+'z');
+      }
+      return `<b>${m.hf} ${m.home} – ${m.af} ${m.away}</b>${hora}. ${analisis}<br><br>${consenso}`;
+    });
+
+    // apuestas de la redaccion: forma reciente
+    const forma=formaReciente().sort((a,b)=>b.pts-a.pts);
+    const enRacha=forma[0],gafe=forma[forma.length-1];
+    const apuestas=finished.length
+      ?pick([
+        `Favorito de la redacción a puntuar hoy: <b>${enRacha.name}</b>, que llega en racha (${enRacha.pts} pts en las últimas jornadas) y hasta camina distinto. Anti-favorito: <b>${gafe.name}</b>, que no acertaría hoy ni el color del césped.`,
+        `La redacción apuesta el sueldo (que es ninguno) a que <b>${enRacha.name}</b> rasca puntos hoy. Y aparta dinero para flores: <b>${gafe.name}</b> lleva una forma que ni los partes médicos.`,
+        `Quiniela de la redacción: <b>${enRacha.name}</b> puntúa seguro, que viene fino. <b>${gafe.name}</b>, en cambio, está en ese momento en que hasta su familia le esconde el boli.`,
+        `Hoy puntúa <b>${enRacha.name}</b> o la redacción se come el micrófono. De <b>${gafe.name}</b> no decimos nada, que bastante tiene con lo suyo.`,
+        `El dedo de la redacción señala a <b>${enRacha.name}</b> como hombre del día. Y señala a <b>${gafe.name}</b> también, pero con otro dedo.`,
+        `Pronóstico de la casa: día grande para <b>${enRacha.name}</b> y otro capítulo del documental "La travesía del desierto" protagonizado por <b>${gafe.name}</b>.`,
+      ],s+'b')
+      :`Primera jornada sin historial: hoy todos parten de cero, que es donde muchos de ustedes se van a quedar.`;
+
+    const cierre=pick([
+      `Volvemos esta noche con la crónica y los nombres de los culpables. Siempre hay culpables.`,
+      `Nos leemos esta noche en la crónica. Lleven pañuelos.`,
+      `A las buenas noches volvemos con el recuento de daños. Suerte, que falta les hace.`,
+      `La redacción se retira a desayunar. Esta noche, autopsia de la jornada.`,
+      `Cerramos el matinal. Recuerden: el fútbol es imprevisible, pero sus fallos no.`,
+      `Hasta la crónica nocturna. Que el fútbol les pille confesados.`,
+      `Fin del análisis. Ahora les toca a los futbolistas arreglar lo que ustedes pronosticaron mal.`,
+      `Volvemos tras los partidos con datos, nombres y cero piedad. Como siempre.`,
+    ],s+'f');
+
+    const dnum=parseInt(day.slice(8));
+    return {
+      t:pick([
+        `☕ ANÁLISIS MATINAL · ${fmtDay(day)}`,
+        `☕ EL MATINAL DE PORRA NEWS · ${fmtDay(day)}`,
+        `☕ BUENOS DÍAS, PORRA · ${fmtDay(day)}`,
+      ],s+'t'),
+      b:`${intro}<br><br><b>🏟️ Los partidos de hoy</b><br><br>${bloques.join('<br><br>')}<br><br><b>🎯 Las apuestas de la redacción</b><br><br>${apuestas}<br><br>${cierre}`
+    };
+  }
+
+  // generar matinales: dias pasados con partidos + hoy si son las 9:00 de Madrid
+  const allDays=[...new Set(MATCHES.map(m=>m.iso))].sort();
+  allDays.forEach(day=>{
+    if(day>hoyM)return;
+    if(day===hoyM&&horaM<9)return;
+    const pv=buildPreview(day);
+    if(pv)items.push({k:day+'a',c:'matinal',m:'El matinal · '+fmtDay(day),t:pv.t,b:pv.b});
+  });
+
+  items.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
   return items.reverse();
 }
 
 function renderNews(){
   const items=buildNews();
+  NEWS_ITEMS=items;
   const el=document.getElementById('newsList');
   if(!items.length){
     el.innerHTML='<div class="news"><div class="nh">Porra News, en directo desde la redacción</div><div class="nb">Aún no hay resultados que destrozar. En cuanto acabe el primer partido, empezamos a repartir. Hay nervios en la redacción.</div><div class="nm">Porra News · Edición inaugural</div></div>';
     return;
   }
-  el.innerHTML=items.map(n=>`<div class="news ${n.c||''}">
+  el.innerHTML=items.map((n,idx)=>`<div class="news ${n.c||''}">
     <div class="nh">${n.t}</div>
     <div class="nb">${n.b}</div>
     <div class="nm">${n.m}</div>
+    <button class="share-btn" style="margin-top:.4rem" onclick="shareNews(${idx},this)">📋 Copiar para WhatsApp</button>
   </div>`).join('');
+}
+
+// ── 🏅 SALÓN DE LA FAMA Y LA VERGÜENZA ────────────────
+function famaStats(uptoN){
+  // estadisticas sobre los primeros uptoN partidos terminados (orden cronologico)
+  const fin=[];
+  DAY_ORDER.forEach(i=>{const lv=LIVE[i];if(lv&&lv.status==='post')fin.push(i);});
+  const use=uptoN?fin.slice(0,uptoN):fin;
+  const st=PLAYERS.map(()=>({ex:0,golesPred:0,n:0,rebano:0,contra:0}));
+  use.forEach(i=>{
+    const m=MATCHES[i],lv=LIVE[i];
+    const hs=parseInt(lv.hs),as=parseInt(lv.as);
+    // signo mayoritario de este partido
+    const sc={'1':0,'X':0,'2':0};
+    m.preds.forEach(p=>{if(p&&p.includes('|'))sc[p.split('|')[0]]++;});
+    const may=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][0];
+    PLAYERS.forEach((p,j)=>{
+      const pred=m.preds[j];
+      if(!pred||!pred.includes('|'))return;
+      const[sg,sco]=pred.split('|');
+      const[a,b]=sco.split('-').map(Number);
+      st[j].n++;
+      st[j].golesPred+=(a+b)||0;
+      if(sg===may)st[j].rebano++;else st[j].contra++;
+      const pts=pointsFor(pred,hs,as);
+      if(pts>=4)st[j].ex++;
+    });
+  });
+  // muro: racha maxima de dias completados consecutivos a cero (sobre los partidos usados)
+  const usedDays=[...new Set(use.map(i=>MATCHES[i].iso))].sort()
+    .filter(d=>MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===d).every(i=>use.includes(i)));
+  const muro=PLAYERS.map((p,j)=>{
+    let max=0,cur=0;
+    usedDays.forEach(d=>{
+      const pts=use.filter(i=>MATCHES[i].iso===d).reduce((s,i)=>{
+        const lv=LIVE[i];
+        return s+(pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0);
+      },0);
+      if(pts===0){cur++;if(cur>max)max=cur;}else cur=0;
+    });
+    return{max,cur};
+  });
+  return{st,muro,nPartidos:use.length,nDias:usedDays.length};
+}
+function holderMax(vals,prev){
+  // devuelve indice del maximo; en empate conserva al anterior si sigue empatado
+  let best=-1,bv=-1;
+  vals.forEach((v,j)=>{if(v>bv){bv=v;best=j;}});
+  if(bv<=0)return null;
+  if(prev!==null&&prev!==undefined&&vals[prev]===bv)return prev;
+  return best;
+}
+const AWARDS=[
+  {id:'oraculo',e:'🔮',t:'El Oráculo',d:'Más resultados exactos',
+   val:f=>f.st.map(s=>s.ex),fmt:v=>v+' exacto'+(v!==1?'s':''),
+   coment:(n,s)=>pick([
+    `${n} ve el futuro. O eso, o tiene pinchado el vestuario. Investigación abierta.`,
+    `${n} acumula exactos mientras el resto acumula excusas. La diferencia entre saber y opinar.`,
+    `El trono del Oráculo es de ${n}. Tratadle con respeto, que es el único con motivos para vacilar.`],s)},
+  {id:'muro',e:'🧱',t:'El Muro',d:'Récord de jornadas seguidas a cero',
+   val:f=>f.muro.map(m=>m.max),fmt:v=>v+' jornada'+(v!==1?'s':'')+' a cero',
+   coment:(n,s)=>pick([
+    `${n} lleva una sequía que ni el desierto de Atacama. Los científicos están en camino.`,
+    `${n} ha convertido el cero en estilo de vida. Constancia se llama. Mala, pero constancia.`,
+    `El Muro es de ${n}: jornada tras jornada sin puntuar, una gesta al alcance de muy pocos. Por suerte.`],s)},
+  {id:'oveja',e:'🐑',t:'La Oveja',d:'% de pronósticos idénticos a la mayoría',
+   val:f=>f.st.map(s=>s.n?Math.round(100*s.rebano/s.n):0),fmt:v=>v+'% rebaño',
+   coment:(n,s)=>pick([
+    `${n} no pronostica: copia al de al lado con una décima de retraso. Beeee.`,
+    `${n}, la Oveja oficial. Su quiniela y la media del grupo son la misma foto.`,
+    `Si la Porra fuera un rebaño, ${n} iría en medio, bien calentito y sin opinar.`],s)},
+  {id:'kamikaze',e:'💣',t:'El Kamikaze',d:'Más pronósticos a contracorriente',
+   val:f=>f.st.map(s=>s.contra),fmt:v=>v+' a contracorriente',
+   coment:(n,s)=>pick([
+    `${n} ve un consenso y se tira contra él sin casco. Admirable. Doloroso, pero admirable.`,
+    `${n} pronostica contra el mundo. El mundo, de momento, va ganando.`,
+    `El Kamikaze es ${n}: donde todos ven un 1, él ve negocio. El negocio aún no ha abierto.`],s)},
+  {id:'optimista',e:'🌈',t:'El Optimista',d:'Más goles pronosticados por partido',
+   val:f=>f.st.map(s=>s.n?Math.round(10*s.golesPred/s.n):0),fmt:v=>(v/10).toFixed(1)+' goles/partido',
+   coment:(n,s)=>pick([
+    `${n} pronostica goleadas como quien pide deseos. El fútbol real, mientras, en el 1-0.`,
+    `Para ${n} todos los partidos acaban 4-2. Vive en un Mundial paralelo mucho más divertido.`,
+    `${n}, el Optimista: tanto gol en su quiniela y tan poco punto en su casillero.`],s)},
+];
+function renderFama(){
+  const f=famaStats(null);
+  const el=document.getElementById('famaList');
+  if(!f.nPartidos){
+    el.innerHTML='<div class="award"><span class="ae">🏅</span><div><div class="at">Salón en obras</div><div class="ad">Los premios se entregan con los primeros resultados. Hay candidatos de sobra para los de la vergüenza.</div></div></div>';
+    return;
+  }
+  el.innerHTML=AWARDS.map(a=>{
+    const vals=a.val(f);
+    const h=holderMax(vals,null);
+    if(h===null)return `<div class="award"><span class="ae">${a.e}</span><div><div class="at">${a.t}</div><div class="ad">${a.d}. Trono vacante: nadie lo merece todavía, ni para bien ni para mal.</div></div></div>`;
+    const name=PLAYERS[h];
+    return `<div class="award"><span class="ae">${a.e}</span><div style="flex:1">
+      <div class="at">${a.t} · <span style="color:#6a8faa;font-weight:400">${a.d}</span></div>
+      <div class="ah">${name} <span style="font-size:.66rem;color:#c9a227;font-weight:400">(${a.fmt(vals[h])})</span></div>
+      <div class="ad">${a.coment(name,'fam'+a.id+name)}</div>
+      <div class="av">Calculado sobre ${f.nPartidos} partido${f.nPartidos!==1?'s':''}</div>
+    </div></div>`;
+  }).join('');
+}
+
+// ── 📋 COMPARTIR A WHATSAPP ──────────────────────────
+let NEWS_ITEMS=[];
+function toWhats(html){
+  return html.replace(/<br\s*\/?>/g,'\n').replace(/<b>/g,'*').replace(/<\/b>/g,'*').replace(/<[^>]+>/g,'');
+}
+function copyText(txt,btn){
+  const done=()=>{if(btn){const o=btn.textContent;btn.textContent='✅ Copiado';setTimeout(()=>btn.textContent=o,1500);}};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopy(txt,done));
+  }else fallbackCopy(txt,done);
+}
+function fallbackCopy(txt,done){
+  const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);
+  ta.select();try{document.execCommand('copy');}catch(e){}document.body.removeChild(ta);done();
+}
+function shareNews(idx,btn){
+  const n=NEWS_ITEMS[idx];
+  if(!n)return;
+  copyText('📰 *PORRA NEWS*\n\n*'+toWhats(n.t)+'*\n\n'+toWhats(n.b),btn);
+}
+function copyRanking(){
+  const f=famaStats(null);
+  const rows=PLAYERS.map((p,j)=>{
+    let pts=0,ex=0,sg=0;
+    MATCHES.forEach((m,i)=>{
+      const lv=LIVE[i];
+      if(!lv||lv.status!=='post')return;
+      const pp=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as));
+      if(pp===null)return;
+      pts+=pp;if(pp>=4)ex++;else if(pp>=1)sg++;
+    });
+    return{name:p,pts:pts+bonusPoints(j),ex};
+  }).sort((a,b)=>b.pts-a.pts||b.ex-a.ex);
+  const med=['🥇','🥈','🥉'];
+  const txt='🏆 *RANKING DE LA PORRA*\n\n'+rows.map((r,i)=>(med[i]||(i+1)+'.')+' '+r.name+' — '+r.pts+' pts').join('\n');
+  copyText(txt,event&&event.target);
 }
 
 function renderScorers(list){
@@ -719,7 +1123,9 @@ function processEvents(events,map){
     if(!h||!a)return;
     const hn=canonical(norm(h.team.displayName)),an=canonical(norm(a.team.displayName));
     const status=statusOf(c);
-    const rec={status,hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock};
+    let kt='';
+    try{kt=new Date(ev.date).toLocaleTimeString('es-ES',{timeZone:'Europe/Madrid',hour:'2-digit',minute:'2-digit'});}catch(e){}
+    const rec={status,hs:h.score||'0',as:a.score||'0',clock:c.status&&c.status.displayClock,t:kt,id:ev.id,ts:Date.parse(ev.date)||0};
     map[hn+'|'+an]=rec;
     const evd=localDate(ev.date||'');
     // eliminatoria: fecha local >= 28 jun, equipos reales, y NO es un cruce de grupos
@@ -793,6 +1199,32 @@ async function fetchScores(){
   persist();
 }
 
+// ── ALINEACIONES (se publican ~1h antes del pitido) ──
+const LINEUPS={};  // matchIndex -> {h:[...], a:[...], last:epoch}
+async function fetchLineups(){
+  const now=Date.now();
+  for(let i=0;i<MATCHES.length;i++){
+    const lv=LIVE[i];
+    if(!lv||!lv.id||!lv.ts)continue;
+    const mins=(lv.ts-now)/60000;
+    if(mins>70||mins<-15)continue;                  // solo ventana previa
+    const cached=LINEUPS[i];
+    if(cached&&(cached.h.length||now-cached.last<5*60000))continue;  // ya tenemos once o reintento <5min
+    try{
+      const r=await fetch(BASE+'/summary?event='+lv.id,{cache:'no-store'});
+      if(!r.ok){LINEUPS[i]={h:[],a:[],last:now};continue;}
+      const d=await r.json();
+      const out={h:[],a:[],last:now};
+      (d.rosters||[]).forEach(ro=>{
+        const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
+        if(ro.homeAway==='home')out.h=names;
+        else if(ro.homeAway==='away')out.a=names;
+      });
+      LINEUPS[i]=out;
+    }catch(e){LINEUPS[i]={h:[],a:[],last:now};}
+  }
+}
+
 let SCORERS_NEXT_TRY=0;  // backoff: si /leaders no existe aun, reintenta cada 30 min
 async function fetchScorers(){
   if(Date.now()<SCORERS_NEXT_TRY)return;
@@ -828,12 +1260,13 @@ function initSel(){
 async function refresh(){
   await fetchScores();
   processKnockouts();
+  await fetchLineups();
   await fetchScorers();
-  [renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
+  [renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 }
 
 initSel();
-[renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
+[renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 refresh();
 setInterval(refresh,60000);
 </script>
