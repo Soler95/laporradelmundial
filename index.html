@@ -46,6 +46,10 @@ table.rank td{padding:.4rem .4rem;border-bottom:1px solid #0e2040}
 .pcell.hit4{background:#143a14}.pcell.hit4 .pv{color:#6fdc6f}
 .pcell.hit1{background:#3a3210}.pcell.hit1 .pv{color:#e8c84a}
 .pcell.miss{background:#2a1212}.pcell.miss .pv{color:#b05858}
+.pmk{display:inline-block;margin-left:3px;font-size:.6rem;font-weight:700;opacity:.95}
+.pcell.hit4{border:1px solid #6fdc6f}
+.pcell.hit1{border:1px solid #e8c84a}
+.pcell.miss{border:1px solid #b05858}
 .note{font-size:.66rem;color:#4a6a8a;margin-top:.7rem;padding:.55rem .7rem;background:#0e2040;border-radius:6px;border-left:3px solid #1e3a5a;line-height:1.6}
 .legend{display:flex;gap:.7rem;font-size:.6rem;color:#8faabf;margin-bottom:.6rem;flex-wrap:wrap}
 .legend span{display:flex;align-items:center;gap:4px}
@@ -122,9 +126,9 @@ select{background:#152d4a;color:#e8edf5;border:1px solid #1e3a5a;border-radius:5
 
 <div id="pronos" class="page">
   <div class="legend">
-    <span><span class="dot" style="background:#143a14;border:1px solid #6fdc6f"></span> Exacto (4)</span>
-    <span><span class="dot" style="background:#3a3210;border:1px solid #e8c84a"></span> Signo (1)</span>
-    <span><span class="dot" style="background:#2a1212;border:1px solid #b05858"></span> Fallo (0)</span>
+    <span><span class="dot" style="background:#143a14;border:1px solid #6fdc6f"></span> ✓✓ Exacto (4)</span>
+    <span><span class="dot" style="background:#3a3210;border:1px solid #e8c84a"></span> ≈ Signo (1)</span>
+    <span><span class="dot" style="background:#2a1212;border:1px solid #b05858"></span> ✗ Fallo (0)</span>
   </div>
   <div id="predList"></div>
 </div>
@@ -177,7 +181,7 @@ function show(id,btn){
 }
 
 // ── PERSISTENCIA ─────────────────────────────────────
-let SAVED={results:{},ko:{},topscorer:null};
+let SAVED={results:{},ko:{},topscorer:null,lineups:{}};
 try{const s=localStorage.getItem('kuadri2026');if(s)SAVED=Object.assign(SAVED,JSON.parse(s));}catch(e){}
 function persist(){try{localStorage.setItem('kuadri2026',JSON.stringify(SAVED));}catch(e){}}
 
@@ -208,10 +212,11 @@ function teamEn(es){return norm(ES2EN[es]||es);}
 function signOf(h,a){return h>a?'1':h<a?'2':'X';}
 function pointsFor(pred,hs,as){
   if(!pred)return null;
+  if(isNaN(hs)||isNaN(as))return null;
   const[sign,score]=pred.split('|');
   if(score===undefined)return null;
   const[ph,pa]=score.split('-').map(Number);
-  if(isNaN(ph))return null;
+  if(isNaN(ph)||isNaN(pa))return null;
   let p=0;
   if(sign===signOf(hs,as))p+=1;
   if(ph===hs&&pa===as)p+=3;
@@ -335,28 +340,35 @@ function renderKnockouts(){
 }
 
 function renderDaily(){
-  let day=null;
+  // historico de TODAS las jornadas con al menos un partido jugado o en juego
+  const days=[];
   DAY_ORDER.forEach(i=>{
     const lv=LIVE[i];
-    if(lv&&(lv.status==='post'||lv.status==='in'))day=MATCHES[i].iso;
+    if(lv&&(lv.status==='post'||lv.status==='in')){
+      const iso=MATCHES[i].iso;
+      if(!days.includes(iso))days.push(iso);
+    }
   });
   const el=document.getElementById('daily');
-  if(!day){el.innerHTML='';return;}
-  const rows=PLAYERS.map((p,j)=>{
-    let pts=0;
-    MATCHES.forEach((m,i)=>{
-      if(m.iso!==day)return;
-      const lv=LIVE[i];
-      if(!lv||lv.status!=='post')return;
-      const pp=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as));
-      if(pp)pts+=pp;
-    });
-    return{name:p,pts};
-  }).sort((a,b)=>b.pts-a.pts);
-  el.innerHTML=`<div class="daily">
-    <div class="daily-h">📈 Puntos del dia — ${fmtDay(day)}</div>
-    <table>${rows.map(r=>`<tr><td>${r.name}</td><td class="${r.pts?'dp':'dz'}">${r.pts?'+'+r.pts:'0'}</td></tr>`).join('')}</table>
-  </div>`;
+  if(!days.length){el.innerHTML='';return;}
+  days.sort().reverse(); // mas reciente arriba
+  el.innerHTML=days.map(day=>{
+    const rows=PLAYERS.map((p,j)=>{
+      let pts=0;
+      MATCHES.forEach((m,i)=>{
+        if(m.iso!==day)return;
+        const lv=LIVE[i];
+        if(!lv||lv.status!=='post')return;
+        const pp=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as));
+        if(pp)pts+=pp;
+      });
+      return{name:p,pts};
+    }).sort((a,b)=>b.pts-a.pts);
+    return `<div class="daily">
+      <div class="daily-h">📈 Puntos del dia — ${fmtDay(day)}</div>
+      <table>${rows.map(r=>`<tr><td>${r.name}</td><td class="${r.pts?'dp':'dz'}">${r.pts?'+'+r.pts:'0'}</td></tr>`).join('')}</table>
+    </div>`;
+  }).join('');
 }
 
 function renderPreds(){
@@ -370,12 +382,14 @@ function renderPreds(){
     const cells=PLAYERS.map((p,j)=>{
       const pred=m.preds[j]||'';
       const disp=pred?(pred.split('|')[1]||pred):'—';
-      let cls='';
+      let cls='',mark='';
       if(act&&pred){
         const pts=pointsFor(pred,parseInt(lv.hs),parseInt(lv.as));
-        cls=pts>=4?' hit4':pts>=1?' hit1':' miss';
+        if(pts>=4){cls=' hit4';mark='<span class="pmk">✓✓</span>';}
+        else if(pts>=1){cls=' hit1';mark='<span class="pmk">≈</span>';}
+        else{cls=' miss';mark='<span class="pmk">✗</span>';}
       }
-      return `<div class="pcell${cls}"><div class="pn">${p}</div><div class="pv">${disp}</div></div>`;
+      return `<div class="pcell${cls}"><div class="pn">${p}</div><div class="pv">${disp}${mark}</div></div>`;
     }).join('');
     html+=`<div class="pmatch"><div class="pmh">${m.hf} ${m.home} <span style="color:#3a5a7a">vs</span> ${m.af} ${m.away}<span class="res">${resTxt}</span></div><div class="pgrid">${cells}</div></div>`;
   });
@@ -459,6 +473,173 @@ function renderRanking(){
 // ── Porra NEWS ──────────────────────────────────────
 function h32(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h);}
 function pick(arr,seed){return arr[h32(seed)%arr.length];}
+// combina varios bancos de fragmentos en un texto, eligiendo uno de cada con semillas distintas
+function mix(seed,sep){var parts=[];for(var i=2;i<arguments.length;i++){parts.push(pick(arguments[i],seed+'_'+i));}return parts.join(sep);}
+// motes rotativos para dar variedad al nombrar quinielistas
+function mote(name,seed){return pick([name,name,name,'el bueno de '+name,'nuestro amigo '+name,'el gran '+name,name+' "el certero" (es ironía)','don '+name],seed+name)}
+
+// ── PULLAS PERSONALIZADAS por quinielista (motes internos de la cuadrilla) ──
+const JABS={
+  'Asier':[
+    `Asier dice que no distingue bien los colores del marcador. Excusa nueva, fallo de siempre.`,
+    `A Asier el verde y el rojo le bailan, pero el cero lo ve clarísimo en su casillero.`,
+    `Asier pidió que los aciertos se marquen con símbolos. Hecho. Los suyos siguen siendo cruces igual.`,
+    `Asier confunde colores, sí, pero su quiniela la vería mal hasta en blanco y negro.`,
+    `El daltonismo de Asier no explica que ponga goleadas donde hay empates. Eso es otro problema.`,
+    `Asier pide adaptaciones para el daltonismo y nosotros pedimos una para que acierte. Las dos siguen pendientes.`,
+    `Asier es tan malo jugando al fútbol que sus pronósticos parecen buenos en comparación. Parecen.`,
+    `Dicen que Asier juega al fútbol. Los que lo han visto prefieren llamarlo "estar en el campo".`,
+    `Entre lo daltónico y lo malo con el balón, Asier es la prueba de que el fútbol no es para todos.`,
+  ],
+  'Iñigo Z':[
+    `Iñigo Z sigue soltero, como sus pronósticos: sin compromiso y sin futuro.`,
+    `Iñigo Z tiene tiempo libre de sobra por estar soltero y aun así no le da para mirar una alineación.`,
+    `Lo de Iñigo Z con las quinielas es como su vida amorosa: mucha confianza, cero resultados.`,
+    `Iñigo Z busca pareja con el mismo ojo con el que busca el resultado: a ciegas y sin suerte.`,
+    `A Iñigo Z le sobra tiempo de soltero para estudiar fútbol y lo invierte en lo contrario.`,
+    `Soltero y sin puntos: Iñigo Z colecciona ausencias, en el amor y en la tabla.`,
+    `Iñigo Z es tan cabezón que defiende sus fallos como si fueran aciertos. Cuestión de cabeza, y de la grande.`,
+    `Con esa cabezonería, Iñigo Z preferiría hundirse con su quiniela antes que admitir que la lió. Y la lió.`,
+    `A Iñigo Z no hay quien le baje del burro: cabezón de nacimiento y fallón de profesión.`,
+  ],
+  'Muskiz':[
+    `Muskiz volvió a fallar, pero tranquilo, que va con la correa puesta y no se pierde.`,
+    `A Muskiz le pasa con la quiniela lo que con la correa: atado en corto y sin soltarse jamás.`,
+    `Muskiz pronostica con la correa bien sujeta, no vaya a ser que se le escape un acierto.`,
+    `Muskiz lleva la correa hasta para rellenar la porra. Quien la sujeta tampoco acierta, por cierto.`,
+    `A Muskiz lo de la correa le viene de serie; lo de fallar, también.`,
+    `Muskiz tan atado que ni los puntos se le acercan, no vaya a morderles.`,
+    `Muskiz rellenó la quiniela después de unos Jägermeister, y se nota: parece traducida del alemán y al revés.`,
+    `El secreto del método Muskiz: un Jäger, otro Jäger, y a pronosticar a ciegas. Los resultados, en consonancia.`,
+    `Muskiz le tiene más fe al Jägermeister que a su análisis táctico. Sabia decisión, porque análisis no hay.`,
+  ],
+  'Ander':[
+    `Ander la tiene pequeña... la cantidad de aciertos, claro. ¿Qué pensaban?`,
+    `Ander compensa lo que le falta en tamaño con lo que le sobra en fallos.`,
+    `A Ander, como dice él, "lo importante no es el tamaño". En su ranking, desde luego, no lo es.`,
+    `Ander presume de que el tamaño no importa. Su número de aciertos opina lo mismo: minúsculo.`,
+    `Lo de Ander es pequeño pero matón... el ego, porque los puntos ni se ven.`,
+    `Ander demuestra cada jornada que, en efecto, el tamaño de su quiniela es modesto.`,
+    `Ander fue futbolista, sí: de recogepelotas. La carrera más cerca del banquillo que del once.`,
+    `Dicen que Ander jugaba al fútbol. La verdad es que recogía los balones que los demás chutaban. Tradición que mantiene en la Porra: recoge migajas.`,
+    `Ander pasó del fútbol a la quiniela con la misma función: estar cerca de la acción sin participar nunca.`,
+  ],
+  'Landa':[
+    `Landa, un poco vasco, pronostica con la fuerza de un harrijasotzaile y la puntería de un txistu.`,
+    `Lo de Landa es muy vasco: mucha fuerza, mucha sidra, y una quiniela que no levanta ni una piedra.`,
+    `Landa echó la quiniela entre talo y talo. Se le notó el aurresku en los fallos.`,
+    `Landa pronostica en euskera y falla en todos los idiomas. Internacional, el chaval.`,
+    `Muy vasco Landa para todo menos para levantar la quiniela: ahí no hay harrijasotzaile que valga.`,
+    `Landa carga txikitos con más acierto que pronósticos, y mira que los txikitos son muchos.`,
+    `Landa entiende de ciclismo, no de fútbol: cada quiniela suya es una etapa de montaña que pincha en el primer puerto.`,
+    `A Landa le hablas de Pogačar y se emociona; le hablas de fútbol y pone cara de coche escoba. Y su porra, de farolillo rojo.`,
+    `Landa pronosticaría mejor el Tour que el Mundial, y eso que el Tour tiene 21 etapas para fallar. Lo suyo con el balón no tiene arreglo.`,
+  ],
+  'Berjano':[
+    `Berjano, ya padre, debería dar ejemplo. A sus hijos, de momento, solo les enseña a perder porras.`,
+    `Berjano falla más que duerme, y siendo padre reciente, eso es decir mucho.`,
+    `A Berjano la paternidad le ha quitado horas de sueño pero no de meter pronósticos imposibles.`,
+    `Berjano cambia pañales mejor que pronostica, y eso que con los pañales tampoco va sobrado.`,
+    `Ser padre le ha dado a Berjano ojeras y ninguna lucidez para la quiniela.`,
+    `Berjano educará a su criatura en valores. En aciertos, mejor que aprenda de otro.`,
+    `Berjano va de chancleta por la vida y por la quiniela: en modo verano permanente y sin pisar el acelerador.`,
+    `A Berjano la chancleta le define: cómodo, relajado, y con un pronóstico tan suelto como el calzado.`,
+    `Berjano pronostica en chancletas, con la seriedad que eso transmite. O sea, ninguna.`,
+  ],
+  'Giacchi':[
+    `Giacchi tiene tres hijos y ni con esas encuentra una quiniela que críe bien.`,
+    `Tres hijos cría Giacchi, y los tres pronosticarían mejor que él. Es ciencia.`,
+    `Giacchi reparte su atención entre tres niños y cero análisis de fútbol. Se nota cuál sufre.`,
+    `Con tres hijos, Giacchi tiene excusa para todo menos para esa quiniela, que no la cría nadie.`,
+    `Giacchi podría poner a sus tres hijos a hacer la porra y subiría en la tabla. Lo decimos en serio.`,
+    `Tres criaturas en casa y la más pequeña sigue siendo el criterio futbolístico de Giacchi.`,
+  ],
+  'Diego':[
+    `Diego se casa pronto. Ojalá elija mejor a su pareja que sus resultados, por su bien.`,
+    `Diego prepara la boda con el mismo criterio que la quiniela. Recen por la novia.`,
+    `A Diego le queda poco de soltero y, visto su nivel, poco de tener excusas. Casado y fallón.`,
+    `Diego dirá "sí, quiero" con más acierto que un "1, fijo". Eso esperamos, al menos.`,
+    `La boda de Diego se acerca y su quiniela ya ensaya el divorcio con los puntos.`,
+    `Diego, hipster de Gràcia, pronostica con café de especialidad en mano y cero idea de fútbol. Pero qué bien presentado el fallo.`,
+    `Diego rellena la quiniela en una cafetería de Gràcia con leche de avena y vinilo de fondo. El resultado es tan artesanal como inútil.`,
+    `A Diego le preguntas por el partido y te habla de un brunch en Gràcia. Hipster hasta para fallar, eso sí, con mucho estilo.`,
+    `Diego es tan de Gràcia que su quiniela lleva filtro sepia y tipografía bonita. Puntos, los justos: ninguno.`,
+  ],
+  'Sanpe':[
+    `Sanpe defiende su quiniela como defiende en el campo: uno de los peores de la historia, y mira que hay.`,
+    `Sanpe falló otra vez. Normal: si no para un balón, cómo va a parar un pronóstico.`,
+    `A Sanpe le entran goles y fallos con la misma facilidad. Defensa de récord, pero del malo.`,
+    `Sanpe es tan mal defensa que sus rivales le mandan christmas. Su quiniela, igual de generosa.`,
+    `Dicen que Sanpe defendiendo deja un boquete; pronosticando, también. Coherencia ante todo.`,
+    `Sanpe ha encajado más goles que aciertos suma. Y eso, en esta Porra, es toda una hazaña.`,
+    `Sanpe es del Osasuna pero le decimos que es del Madrid solo para verle sufrir. Sufre el doble: por el equipo y por la quiniela.`,
+    `A Sanpe, forofo de Osasuna, lo de llamarle madridista le duele más que ir último. Y va último, así que imagina.`,
+    `Sanpe jura por El Sadar que es rojillo, pero en la redacción lo fichamos de blanco. Acierta tanto como un meme: poco y a destiempo.`,
+  ],
+  'Olague':[
+    `Olague, capitán del Valle de Egüés, lidera a los suyos en el campo y a nadie en la Porra.`,
+    `El capitán Olague manda en el Valle de Egüés; en el ranking, ni el brazalete le salva.`,
+    `Olague lleva el brazalete de capitán a todas partes menos a lo alto de esta tabla.`,
+    `Capitán en su equipo, grumete en la Porra: Olague pierde galones cada jornada.`,
+    `Olague da charlas motivadoras al Valle de Egüés y luego entrega una quiniela desmotivadora.`,
+    `El brazalete de Olague pesa, pero menos que sus fallos acumulados.`,
+  ],
+  'Iker':[
+    `Iker, que se parece a Leónidas, gritaría "¡esto es la Porra!" y patearía su quiniela al pozo.`,
+    `Con cara de Leónidas y quiniela de cobarde: Iker promete 300 aciertos y entrega 3.`,
+    `Iker tiene el físico de Esparta y el acierto de un soldado persa cualquiera.`,
+    `Leónidas defendió las Termópilas con 300; Iker no defiende ni un pronóstico con quince intentos.`,
+    `Iker se parece a Leónidas en todo menos en lo de ganar batallas. Ahí, más bien persa.`,
+    `"¡Espartanos, preparad la quiniela!", gritó Iker. Y la perdió igual, como en la peli.`,
+  ],
+  'M. Zalba':[
+    `M. Zalba mantiene el misterio sobre muchas cosas; sobre su quiniela, en cambio, está clarísimo: es mala.`,
+    `De M. Zalba no sabemos casi nada, salvo que pronostica fatal. El resto, que siga siendo enigma.`,
+    `M. Zalba guarda sus secretos con celo. Sus puntos, por desgracia, son un libro abierto y vacío.`,
+    `El gran enigma de M. Zalba no es ningún secreto, es cómo falla tanto teniendo los mismos datos que todos.`,
+    `M. Zalba es un misterio andante. El único resuelto: su casillero, transparente de tan vacío.`,
+    `Sobre M. Zalba se especula mucho; sobre su nivel en la Porra, ya no hay debate posible.`,
+    `M. Zalba trabaja en una fábrica de palés y apila pronósticos fallidos con la misma eficiencia: uno encima de otro, hasta el techo.`,
+    `De tanto montar palés, M. Zalba pronostica en serie y en bloque: todos iguales, todos fallidos, listos para enviar.`,
+    `M. Zalba apila palés de lunes a viernes y apila ceros el fin de semana. Producción no le falta.`,
+  ],
+  'Alex':[
+    `Alex, de vías ferratas, se cuelga de cualquier pared menos de un pronóstico que se sostenga.`,
+    `A Alex le va la altura y el vacío. Su quiniela comparte lo segundo.`,
+    `Alex sube paredes con arnés y baja en el ranking sin red. Aventurero hasta para fallar.`,
+    `Alex se juega la vida en una ferrata y los puntos en una quiniela. Pierde en las dos, pero sobrevive.`,
+    `Con lo bien que Alex se agarra a una roca, qué pena que no se agarre a un análisis decente.`,
+    `Alex busca adrenalina en las alturas porque emoción en su ranking, desde luego, no encuentra.`,
+    `A Alex le llaman "pelo escarola" y la mata de pelo le ocupa más neuronas que el análisis del partido.`,
+    `Pelo escarola por fuera y poco fútbol por dentro: Alex invierte en peluquería lo que no invierte en mirar alineaciones.`,
+    `El pelo escarola de Alex desafía la gravedad mejor que sus pronósticos desafían la lógica.`,
+  ],
+  'Soler':[
+    `Soler, el jabato supremo, embiste cada jornada y se estrella con la misma nobleza.`,
+    `El jabato supremo Soler carga sin mirar y acierta sin querer. Pura bravura, poca puntería.`,
+    `Soler pronostica como un jabato: con el corazón, a cabezazos y sin pensarlo demasiado.`,
+    `El jabato supremo embiste la quiniela de frente y la quiniela, como el muro, no se mueve.`,
+    `Soler tiene la bravura de un jabato y el tino de un jabalí con los ojos cerrados.`,
+    `"Jabato supremo" suena imponente hasta que ves los puntos de Soler. Ahí ya es solo jabato.`,
+  ],
+  'Liza':[
+    `Liza tiene una casa en Candanchú que la cuadrilla usa para destrozarla. Su quiniela la destroza él solito.`,
+    `Liza pone la casa de Candanchú y los puntos los pierde él: anfitrión generoso, quinielista nefasto.`,
+    `A Liza le destrozan la casa de Candanchú y el orgullo en el ranking. Doble hospitalidad.`,
+    `La casa de Liza en Candanchú aguanta más fiestas que su quiniela aciertos, y mira que aguanta.`,
+    `Liza presta Candanchú para el desfase y la Porra para el desastre. Generoso en ambas.`,
+    `En Candanchú Liza pone la casa; en la Porra, el hazmerreír. Reparto de papeles asumido.`,
+  ],
+};
+function jab(name,seed){const arr=JABS[name];return arr?pick(arr,seed+'jab'+name):null;}
+// devuelve una pulla personalizada de algún jugador de una lista (si aplica), ~40% de las veces
+function maybeJab(names,seed){
+  if(!names||!names.length)return '';
+  if(h32(seed+'jw')%5>=3)return ''; // ~60% de probabilidad
+  const who=names[h32(seed+'jwho')%names.length];
+  const j=jab(who,seed);
+  return j?' '+j:'';
+}
 function lista(names){
   if(!names.length)return '';
   if(names.length===1)return names[0];
@@ -552,10 +733,14 @@ function buildNews(){
           `CATÁSTROFE NACIONAL: los 15 cerebros de la Porra fallan el ${m.home}–${m.away}. Ni uno. Cero.`,
           `El ${m.home}–${m.away} acaba ${res} y deja a la Porra en ridículo internacional: 15 pronósticos, 15 desastres`,
           `15 adultos funcionales (en teoría) y ninguno acierta ni el signo del ${m.home}–${m.away}. Para estudio científico`,
+          `PLENO AL QUINCE de fallos: el ${m.home}–${m.away} (${res}) no lo vio venir absolutamente nadie. Nivelazo`,
+          `Histórico: la Porra firma un 0 de 15 en el ${m.home}–${m.away}. Hay que ser muy malo, y lo sois, en equipo`,
         ],seed+'f1'),
         b:pick([
           `Quince personas. Quince. Y ninguna se acercó ni de casualidad. Los expertos recomiendan que el año que viene apostéis a piedra, papel o tijera, que ahí al menos hay un 33% de posibilidades.`,
           `Una paloma picoteando una quiniela tendría mejor porcentaje. Y la paloma no presume de "ver mucho fútbol".`,
+          `El fallo perfecto, la sinfonía del despropósito: los 15 a una. Si se pusieran de acuerdo para acertar la mitad de bien que para fallar, esto sería otra cosa.`,
+          `Ni por descarte. Ni tirando a voleo. Ni cerrando los ojos. Quince intentos y el cero más redondo de la historia de esta porra. Enmarcadlo.`,
         ],seed+'f2')});
     } else if(fl.length>=10){
       items.push({k:m.iso+'b'+i,c:'',m:meta,
@@ -563,11 +748,15 @@ function buildNews(){
           `${res} en el ${m.home}–${m.away}: solo ${lista(sg)} se salvan de la quema`,
           `El ${m.home}–${m.away} se lleva por delante a ${fl.length} quinielistas. ${lista(sg)} miran desde arriba con desprecio`,
           `Masacre en la Porra: ${fl.length} caídos en el ${m.home}–${m.away}. ${lista(sg)} sobreviven, nadie sabe cómo`,
+          `Degollina en el ${m.home}–${m.away} (${res}): ${fl.length} cadáveres y ${lista(sg)} de pie por pura chiripa`,
+          `El ${m.home}–${m.away} pasa por encima de ${fl.length} quinielas como una apisonadora. ${lista(sg)} esquivan${sg.length>1?'':''} la masacre`,
         ],seed+'f3'),
         b:pick([
           `El resto puso resultados tan creativos que la FIFA estudia incluirlos en una exposición de arte abstracto.`,
           `${pringao} declaró: "yo es que el fútbol lo veo poco". Se nota, campeón. Se nota.`,
           `${pringao}${pringao2?' y '+pringao2:''} lideran la lista de damnificados. En sus casas ya les esconden el móvil cuando hay que rellenar la quiniela.`,
+          `${fl.length} fallos de 15 es casi un mérito inverso: hay que esforzarse para ser tan malos en bloque. ${pringao} se lleva la mención de honor.`,
+          `Tantos caídos que la Porra parece el final de una peli de guerra. ${lista(sg)} pasea${sg.length>1?'n':''} entre los escombros sin entender cómo sigue${sg.length>1?'n':''} vivo${sg.length>1?'s':''}.`,
         ],seed+'f4')});
     } else if(goleada){
       items.push({k:m.iso+'b'+i,c:'',m:meta,
@@ -575,10 +764,14 @@ function buildNews(){
           `${ganador} endosa un ${res} y revienta las quinielas prudentes: ${ex.length?lista(ex)+' lo vio venir':'nadie puso tanto gol'}`,
           `Festival de goles (${res}) en el ${m.home}–${m.away}. ${pringao?pringao+' había puesto un empate. Un empate. Hay que verlo para creerlo':'Las quinielas, como siempre, mucho más aburridas que el fútbol'}`,
           `${res}. ${pringao?pringao+' pronosticó este partido con la misma puntería con la que juega al fútbol: ninguna':'Goleada que pilló a casi toda la Porra mirando otro canal'}`,
+          `Vendaval: ${ganador} firma un ${res} de escándalo y ${pringao?pringao+' se queda con cara de no entender en qué partido estaba pensando':'las quinielas tímidas quedan retratadas'}`,
+          `${res} de manita. ${ex.length?lista(ex)+' lo clavó y hoy cena gratis moralmente':'Nadie se atrevió a tanto gol y por eso nadie cobra'}`,
         ],seed+'g1'),
         b:pick([
           `${sg.length?lista(sg.slice(0,3))+' al menos acertaron quién ganaba. El listón está tan bajo que eso ya es noticia.':'Ni el signo, oiga. Ni el signo.'}`,
           `Goleadas así separan a los que ven fútbol de los que dicen que ven fútbol. La Porra está llena de los segundos.`,
+          `${pringao?pringao+' puso un marcador de partido de ajedrez para un partido de baloncesto. Cero lectura.':'El que puso prudencia hoy pagó la prudencia. Así es esto.'}`,
+          `Tanto gol y tan pocas quinielas a la altura. La Porra prefiere el 1-0 cobarde, y el fútbol se lo recuerda a goles.`,
         ],seed+'g2')});
     } else if(ganador&&(m.home==='España'||m.away==='España')){
       items.push({k:m.iso+'b'+i,c:'',m:meta,
@@ -605,14 +798,37 @@ function buildNews(){
           `${ganador||'El empate'} se impone (${res}) y ${pringao?pringao+' confirma que su quiniela la rellena su gato. El gato lo niega y se desmarca':'la Porra sigue a su nivel: bajo'}`,
           `${res}. ${ex.length===0?'Cero exactos. Cuando el nivel es este, lo raro es que acertéis el día del partido':'Puntos repartidos con cuentagotas'}`,
           `Crónica express del ${m.home}–${m.away} (${res}): ${sg.length} medio-aciertos, ${fl.length} ridículos y cero autocrítica`,
+          `${res} y ${pringao?pringao+' vuelve a demostrar que ver fútbol y entenderlo son cosas distintas':'el rebaño se reparte las sobras'}. Aplausos contenidos`,
+          `El ${m.home}–${m.away} (${res}) pasará a la historia por nada, igual que las quinielas de ${lista(fl.slice(0,2))||'medio grupo'}`,
+          `${ganador?ganador+' cumple':'Tablas'} (${res}). ${pringao?pringao+' ya tiene excusa preparada, lleva ensayándola desde el descanso':'Nadie brilla, todos sobreviven'}`,
+          `${res} en un partido que ${sg.length<5?'casi nadie vio venir, y eso que no tenía mucha ciencia':'el rebaño olió de lejos, milagrosamente'}`,
+          `Resultado ${res}. La Porra responde con ${ex.length} exactos, ${sg.length} signos y una cantidad industrial de "yo lo tenía casi"`,
         ],seed+'d1'),
-        b:pick([
-          `Nadie clavó el exacto, que es lo que de verdad da puntos. Mucho ruido, pocos goles acertados.`,
-          `Un punto por el signo. Enhorabuena, supongo. Los 3 del resultado exacto siguen huérfanos.`,
-          `${pringao||'Alguno'} puso un marcador tan optimista que ni los aficionados del equipo se lo creían.`,
-          `Comparativa odiosa: ${sg.length?pick(sg,seed+'d4')+' al menos rascó un punto.':'Nadie rascó nada.'} ${pringao?pringao+' rascó lo de siempre: nada. Su quiniela y un papel en blanco valen los mismos puntos.':''}`,
-          `${pringao?pringao+' suma otro cero a una colección que empieza a ser preocupante. Los médicos descartan mal de ojo: es simplemente que no tiene ni idea.':'Jornada de transición, que es como llamamos aquí a fallar con dignidad.'}`,
-        ],seed+'d3')});
+        b:mix(seed+'mix','<br><br>',
+          [ // APERTURA
+            `Resultado ${res} y la Porra reacciona como sabe: tarde y mal.`,
+            `${res} final. La quiniela media de hoy volvió a ser un homenaje al despiste.`,
+            `Acabó ${res}. Ni clamor ni gloria: el reparto de puntos de costumbre, con cuentagotas.`,
+            `${res} en el marcador. En las quinielas, el habitual festival de la equivocación.`,
+            `El ${m.home}–${m.away} dijo ${res} y dejó a la Porra con la misma cara de siempre.`,
+            `${res}. Otro partido, otra oportunidad desperdiciada por casi todos.`,
+            `Cae el telón con un ${res} que pocos vieron venir, como casi todo aquí.`,
+          ],
+          [ // ANALISIS / PUNTOS
+            ex.length?`Los ${ex.length} del exacto (${lista(ex.slice(0,3))}) cobran de verdad; el resto, a mirar.`:`Cero exactos otra vez: el puntito gordo sigue sin dueño.`,
+            sg.length?`${lista(sg.slice(0,3))}${sg.length>3?' y compañía':''} rascan el signo y lo celebran como una final.`:`Ni el signo acertó casi nadie, que ya tiene mérito inverso.`,
+            fl.length?`En el bando de los caídos, como siempre, asoma ${mote(pringao||'medio grupo',seed+'mo')}.`:`Curiosamente hoy casi nadie hizo el ridículo del todo. Raro.`,
+            `${sg.length} signos, ${ex.length} exactos y una montaña de "yo lo tenía casi".`,
+            `El acierto escaseó tanto que habría que declararlo especie protegida en esta Porra.`,
+          ],
+          [ // PULLA FINAL
+            `${pringao?mote(pringao,seed+'p1')+' ya tiene excusa lista; lleva ensayándola desde el descanso.':'Mañana será otro día para fallar con renovada ilusión.'}`,
+            `Recordatorio: esto es fútbol, no un sorteo. Aunque visto lo visto, algunos juegan a otra cosa.`,
+            `La redacción sugiere ver los partidos enteros. Es una idea revolucionaria, lo sabemos.`,
+            `${pringao?'A '+mote(pringao,seed+'p2')+' ya le esconden el móvil los días de quiniela.':'El nivel sube... en otras porras. Aquí seguimos en obras.'}`,
+            `Puntos van, puntos vienen, y el ridículo se queda. Hasta la próxima.`,
+            `Que conste que avisamos: este grupo y la precisión no se hablan desde mayo.`,
+          ])+maybeJab(fl.length?fl:PLAYERS,seed+'pj')});
     }
 
     // noticia extra de racha: alguien que lleve 3+ jornadas a cero
@@ -667,12 +883,20 @@ function buildNews(){
       `Jornada finiquitada. ${dayIdx.length} partido${dayIdx.length>1?'s':''}, mucha emoción en los estadios y un nivel de pronóstico en este grupo que da entre pena y risa.`,
       `Termina otro día de Mundial y esta redacción sigue sin entender cómo 15 personas que llevan viendo fútbol toda la vida pronostican como si lo hubieran descubierto ayer en un bar.`,
       `Día de fútbol en tres continentes y de bochorno en uno solo: el grupo de WhatsApp de la Porra.`,
+      `Se apagan los focos de la jornada y se encienden los de la vergüenza: bienvenidos a la crónica de la Porra.`,
+      `Caen las quinielas como moscas y la redacción, encantada, lo cuenta todo sin anestesia.`,
+      `Otra jornada que confirma la teoría de esta casa: aquí se apuesta con el hígado y se acierta con el horóscopo.`,
+      `Acabó la jornada. En el césped, fútbol; en vuestras quinielas, una performance de arte contemporáneo difícil de explicar.`,
+      `El Mundial avanza, la Porra retrocede, y esta redacción engorda a base de carcajadas. Crónica al canto.`,
     ],seed+'i');
     const heroe=top.pts>0
       ?pick([
         `El día se lo lleva ${lista(cotop)} con ${top.pts} punto${top.pts>1?'s':''}${top.ex?' y resultado exacto incluido':''}. Disfrutad del momento de gloria, que con vuestro historial no va a durar.`,
         `${lista(cotop)} firma${cotop.length>1?'n':''} la mejor jornada (${top.pts} pts)${top.ex?', con exacto y todo':''}. Ya está${cotop.length>1?'n':''} redactando el discurso de campeón. Tranquilos, queda Mundial para hundiros.`,
         `${lista(cotop)} se corona${cotop.length>1?'n':''} con ${top.pts} punto${top.pts>1?'s':''}. Hasta los relojes rotos aciertan a veces, pero hoy toca aplaudir. Mañana volvemos al vacile.`,
+        `Aplausos de oficina para ${lista(cotop)} (${top.pts} pts): por un día, el menos torpe de la clase. Saboréalo, que es perecedero.`,
+        `${lista(cotop)} brilla con ${top.pts} punto${top.pts>1?'s':''} en una jornada en la que brillar era tan fácil como que el resto seguía a oscuras.`,
+        `Hoy el podio es para ${lista(cotop)}. La redacción le concede el honor a regañadientes y con la lupa puesta por si hubo suerte, que la hubo.`,
       ],seed+'h')
       :`Lo mejor del día: nadie. Literalmente nadie puntuó. Un aplauso lento para los 15.`;
     const paquetes=ceros.length
@@ -681,6 +905,9 @@ function buildNews(){
         `Mención deshonorífica a ${lista(ceros)}, que se han ido de vacío. Dicen que lo importante es participar. Lo dicen ellos, claro.`,
         `Capítulo de vergüenza ajena: ${lista(ceros)} a cero. Sus quinielas de hoy van directas al museo de los horrores, sala principal, vitrina con luz propia.`,
         `${lista(ceros)}: cero puntos. Hay plantas de interior con mejor lectura táctica del juego. Y las plantas no presumen en el grupo.`,
+        `Ronda de pésames para ${lista(ceros)}, que firmaron el cero con la naturalidad de quien ya tiene callo. Un clásico.`,
+        `${lista(ceros)} se va${ceros.length>1?'n':''} de vacío y de paseo por el sótano de la tabla. Allí ya tiene${ceros.length>1?'n':''} hasta sillón asignado.`,
+        `El cero del día lo firman ${lista(ceros)}. La redacción propondría mejorar, pero a estas alturas sería crueldad darles esperanzas.`,
       ],seed+'p')
       :`Milagro: hoy nadie se fue de vacío. Apuntad la fecha.`;
     const lidertxt=pick([
@@ -688,12 +915,17 @@ function buildNews(){
       `${lider.name} sigue al frente (${lider.pts} pts) y cada día que pasa se le entiende peor cuando habla, de lo subido que está. Por abajo, ${colista.name} pide que la clasificación se lea de abajo a arriba.`,
       `Comparativa odiosa de la general: ${lider.name} arriba con ${lider.pts} puntos, ${colista.name} abajo con ${colista.pts}. Mismo deporte, mismos partidos, mismos ojos para verlos. La diferencia: uno los usa.`,
       `${lider.name} lidera con ${lider.pts} puntos. ${colista.name}, colista, asegura que "esto es una carrera de fondo". Correcto: y va último en la carrera de fondo.`,
+      `Arriba del todo, ${lider.name} (${lider.pts} pts) sacando pecho; abajo del todo, ${colista.name} sacando excusas. El orden natural de la Porra, intacto.`,
+      `${lider.name} manda en la general y ya se cree con derecho a opinar de fútbol en las bodas. ${colista.name}, colista, mejor que opine de otra cosa.`,
     ],seed+'l');
     const cierre=pick([
       `Mañana más fútbol y, conociendo el percal, más motivos para reírse de alguien. Porra News no descansa.`,
       `Seguiremos informando. Ellos seguirán fallando. El equilibrio del universo, intacto.`,
       `Esto ha sido todo por hoy. Recuerden: la vergüenza es temporal, los puntos son para siempre.`,
       `Cerramos edición. Si mañana alguno acierta algo, abriremos con ello. No esperamos abrir con ello.`,
+      `Y hasta aquí la jornada. La redacción se va a dormir feliz: material para reírse no va a faltar en semanas.`,
+      `Pasen buena noche todos menos los del cero, que se la merecen regular. Mañana, más.`,
+      `Fin de la crónica. Recuerden hidratarse, descansar y, sobre todo, mirar una alineación antes de pronosticar. Va por ustedes.`,
     ],seed+'c');
 
     items.push({k:day+'z',c:'cronica',m:`Crónica de la jornada · ${fmtDay(day)}`,
@@ -702,7 +934,7 @@ function buildNews(){
         `LA CRÓNICA FALTOSA: así fue el ${fmtDay(day)} en la Porra`,
         `PARTE DE GUERRA: lo que la jornada del ${fmtDay(day)} dejó en la Porra (heridos múltiples)`,
       ],seed+'t'),
-      b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${cierre}`});
+      b:`${intro}<br><br>${heroe}<br><br>${paquetes}<br><br>${lidertxt}<br><br>${(function(){const j=jab((ceros.length?ceros:cotop)[h32(seed+'cj')%(ceros.length?ceros:cotop).length],seed+'cron');return j?'<b>Apunte personal:</b> '+j+'<br><br>':'';})()}${cierre}`});
   });
 
   function buildKOPreview(day){
@@ -767,12 +999,13 @@ function buildNews(){
   // previas de eliminatorias (1h antes), con onces si ESPN los publica
   const nowKO=Date.now();
   Object.entries(KO_EVENTS).forEach(([key,e])=>{
-    if(!e.ts||nowKO<e.ts-65*60000)return;
+    if(!e.ts)return;
+    const lu=LINEUPS['ko|'+key];
+    const hayOnce=lu&&lu.h.length>=7&&lu.a.length>=7;
+    if(nowKO<e.ts-65*60000&&!hayOnce)return;
     const hes=EN_ES[e.h]||e.h,aes=EN_ES[e.a]||e.a;
     const hf=EN_FLAG[e.h]||'⚽',af=EN_FLAG[e.a]||'⚽';
     const s='koprevia'+key;
-    const lu=LINEUPS['ko|'+key];
-    const hayOnce=lu&&lu.h.length>=7&&lu.a.length>=7;
     const onces=hayOnce
       ?`<b>Once de ${hes}:</b> ${lu.h.join(', ')}.<br><br><b>Once de ${aes}:</b> ${lu.a.join(', ')}.`
       :`Onces por confirmar. Los seleccionadores dudan; ustedes, en cambio, apostaron sus cuadros hace un mes sin dudar. Por eso están como están.`;
@@ -930,6 +1163,38 @@ function buildNews(){
     });
   }
 
+  // ── 🐔 EL GALLO DEL CORRAL: cambios de líder ──
+  {
+    const daysG=[...new Set(finished.map(i=>MATCHES[i].iso))].sort();
+    let prevGallo=null;
+    daysG.forEach((day,di)=>{
+      const acum=PLAYERS.map((p,j)=>{
+        let pts=0;
+        finished.forEach(i=>{
+          if(MATCHES[i].iso>day)return;
+          const lv=LIVE[i];
+          pts+=pointsFor(MATCHES[i].preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+        });
+        return{name:p,pts};
+      }).sort((a,b)=>b.pts-a.pts);
+      const gallo=acum[0].pts===acum[1].pts?prevGallo||acum[0].name:acum[0].name;
+      if(di>=1&&prevGallo&&gallo!==prevGallo){
+        items.push({k:day+'y3',c:'breaking',m:`El Gallo del Corral · ${fmtDay(day)}`,
+          t:pick([
+            `🐔 NUEVO GALLO EN EL CORRAL: ${gallo} destrona a ${prevGallo} y se sube al gallinero`,
+            `🐔 ${gallo} arrebata el liderato a ${prevGallo} y ya canta desde lo más alto`,
+            `🐔 GOLPE EN EL CORRAL: ${prevGallo} pierde el trono y ${gallo} toma el mando`,
+          ],'gallo'+day),
+          b:pick([
+            `${gallo} se corona Gallo del Corral y empieza el kikirikí. ${prevGallo}, destronado, baja del balcón con las plumas gachas y mucho que callar. El corral tiene amo nuevo, hasta que deje de tenerlo.`,
+            `Relevo en lo más alto: ${gallo} es el nuevo líder y ${prevGallo} aprende que en este gallinero las coronas son de alquiler. Que cante ${gallo} mientras pueda, que aquí nadie reina dos semanas seguidas.`,
+            `${gallo} sube al ranking y a la chulería; ${prevGallo} pasa de gallo a gallina ponedora de excusas en una sola jornada. El corral aplaude y afila los picos para el siguiente.`,
+          ],'gallo2'+day)});
+      }
+      prevGallo=gallo;
+    });
+  }
+
   // ── 🥄 ANTICAMPEONATO: cambios de Cuchara de Palo ──
   {
     const days3=[...new Set(finished.map(i=>MATCHES[i].iso))].sort();
@@ -989,10 +1254,12 @@ function buildNews(){
   MATCHES.forEach((m,i)=>{
     const lv=LIVE[i];
     if(!lv||!lv.ts)return;
-    if(nowEp<lv.ts-65*60000)return;        // aun falta mas de ~1h
-    const s='previa'+m.code+m.home;
     const lu=LINEUPS[i];
     const hayOnce=lu&&lu.h.length>=7&&lu.a.length>=7;
+    // mostrar la previa si: falta <1h, o el partido es reciente/en juego, o YA tenemos onces guardados
+    const dentroVentana=nowEp>=lv.ts-65*60000;
+    if(!dentroVentana&&!hayOnce)return;
+    const s='previa'+m.code+m.home;
     const onces=hayOnce
       ?`<b>Once de ${m.home}:</b> ${lu.h.join(', ')}.<br><br><b>Once de ${m.away}:</b> ${lu.a.join(', ')}.`
       :pick([
@@ -1172,7 +1439,7 @@ function buildNews(){
     if(!name)return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
       b:`Hoy toca hablar de ${cafe.t}. ${cafe.s}<br><br>Quisiéramos comparar esta historia con alguno de ustedes, pero el Salón de la Fama aún no tiene titulares: ni un mérito, ni siquiera una vergüenza consolidada. Quince participantes y ni medio personaje. La historia del fútbol tiene de todo; esta Porra, de momento, no tiene nada. Volveremos cuando alguno haga algo digno de mención, para bien o (más probable) para mal.`};
     return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
-      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros.`};
+      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>${(function(){const j=jab(pick(PLAYERS,day+'cafejw'),day+'cafej');return j?'<b>Y de propina:</b> '+j+'<br><br>':'';})()}Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros.`};
   }
 
   // ── ☕ ANÁLISIS MATINAL (visible desde las 9:00 hora de Madrid) ──
@@ -1322,7 +1589,7 @@ function buildNews(){
         `☕ EL MATINAL DE PORRA NEWS · ${fmtDay(day)}`,
         `☕ BUENOS DÍAS, PORRA · ${fmtDay(day)}`,
       ],s+'t'),
-      b:`${intro}<br><br><b>🏟️ Los partidos de hoy</b><br><br>${bloques.join('<br><br>')}<br><br><b>🎯 Las apuestas de la redacción</b><br><br>${apuestas}<br><br>${cierre}`
+      b:`${intro}<br><br><b>🏟️ Los partidos de hoy</b><br><br>${bloques.join('<br><br>')}<br><br><b>🎯 Las apuestas de la redacción</b><br><br>${apuestas}<br><br>${(function(){const j=jab(pick(PLAYERS,s+'jw'),s+'jm');return j?'<b>El dardo matinal:</b> '+j+'<br><br>':'';})()}${cierre}`
     };
   }
 
@@ -1348,6 +1615,29 @@ function buildNews(){
   }
 
   items.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
+  // ── 📋 PÍLDORAS: titulares absurdos de relleno (una por jornada completada) ──
+  {
+    const pdays=[...new Set(finished.map(i=>MATCHES[i].iso))];
+    pdays.forEach(day=>{
+      const dayIdx=MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day);
+      if(!dayIdx.every(i=>LIVE[i]&&LIVE[i].status==='post'))return;
+      const s='pill'+day;
+      const quien=pick(PLAYERS,s+'q');
+      const pildoras=[
+        {t:`📋 ENCUESTA: el 100% de la redacción cree que ${quien} no vio el partido entero`,b:`Margen de error: 0%. Muestra: nosotros. Metodología: mirar su quiniela. ${jab(quien,s+'j')||'Las conclusiones se explican solas.'}`},
+        {t:`📋 ÚLTIMA HORA: ${quien} jura que "esta jornada lo tenía clarísimo"`,b:`Fuentes presenciales confirman que lo dijo con la boca pequeña y la quiniela más pequeña todavía. La hemeroteca, implacable, guarda la captura.`},
+        {t:`📋 CIENCIA: estudio confirma que tirar una moneda iguala a la media de la Porra`,b:`La moneda, however, no presume en el grupo de WhatsApp ni manda audios de tres minutos explicando por qué falló. Ventaja para la moneda.`},
+        {t:`📋 SUCESOS: localizada la quiniela de ${quien}. Estaba escondida de la vergüenza`,b:`La encontraron debajo de la tabla de clasificación, temblando. Se le practicó la reanimación pero llegó sin puntos al lugar de los hechos.`},
+        {t:`📋 METEOROLOGÍA: se esperan chubascos de fallos sobre el grupo, con ${quien} como epicentro`,b:`Aviso amarillo en toda la Porra. Recomendamos no salir a pronosticar sin paraguas ni autoestima. ${jab(quien,s+'j2')||''}`},
+        {t:`📋 ECONOMÍA: los puntos de ${quien} cotizan a la baja por decimoctava jornada consecutiva`,b:`Los analistas recomiendan vender. Los compañeros recomiendan consolar. La redacción recomienda seguir riéndose, que es gratis.`},
+        {t:`📋 CULTURA: la quiniela de ${quien} expuesta en el museo de arte abstracto`,b:`Los críticos la definen como "una obra valiente que rompe con toda lógica conocida, incluida la del fútbol". Entrada gratuita, salida con risa floja.`},
+        {t:`📋 DEPORTES: ${quien} ficha por la liga de pronosticadores... como ejemplo de lo que no hay que hacer`,b:`Le han ofrecido un puesto de profesor en la categoría "errores clásicos". Cobra en collejas. Acepta porque al menos cobra algo.`},
+      ];
+      const p=pildoras[h32(s+'pick')%pildoras.length];
+      items.push({k:day+'w',c:'',m:`La píldora · ${fmtDay(day)}`,t:p.t,b:p.b});
+    });
+  }
+
   return items.reverse();
 }
 
@@ -1456,7 +1746,7 @@ function renderFama(){
     el.innerHTML='<div class="award"><span class="ae">🏅</span><div><div class="at">Salón en obras</div><div class="ad">Los premios se entregan con los primeros resultados. Hay candidatos de sobra para los de la vergüenza.</div></div></div>';
     return;
   }
-  el.innerHTML=AWARDS.map(a=>{
+  el.innerHTML=galloCard(f)+AWARDS.map(a=>{
     const vals=a.val(f);
     const h=holderMax(vals,null);
     if(h===null)return `<div class="award"><span class="ae">${a.e}</span><div><div class="at">${a.t}</div><div class="ad">${a.d}. Trono vacante: nadie lo merece todavía, ni para bien ni para mal.</div></div></div>`;
@@ -1468,6 +1758,35 @@ function renderFama(){
       <div class="av">Calculado sobre ${f.nPartidos} partido${f.nPartidos!==1?'s':''}</div>
     </div></div>`;
   }).join('')+cucharaCard(f);
+}
+function galloCard(f){
+  // 🐔 EL GALLO DEL CORRAL: líder del ranking general (puntos totales con bonus)
+  if(!f.nPartidos)return '';
+  const acum=PLAYERS.map((p,j)=>{
+    let pts=0;
+    MATCHES.forEach((m,i)=>{
+      const lv=LIVE[i];
+      if(!lv||lv.status!=='post')return;
+      pts+=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as))||0;
+    });
+    return{name:p,pts:pts+bonusPoints(j)};
+  }).sort((a,b)=>b.pts-a.pts);
+  const lider=acum[0],seg=acum[1];
+  const vent=lider.pts-seg.pts;
+  return `<div class="award" style="border-color:#c9a227;border-width:1.5px">
+    <span class="ae">🐔</span>
+    <div style="flex:1">
+      <div class="at" style="color:#f5c518">EL GALLO DEL CORRAL · <span style="color:#6a8faa;font-weight:400">líder del ranking</span></div>
+      <div class="ah">${lider.name} <span style="font-size:.66rem;color:#f5c518;font-weight:400">(${lider.pts} pts, ${vent===0?'empatado con '+seg.name:'+'+vent+' sobre '+seg.name})</span></div>
+      <div class="ad">${pick([
+        lider.name+' manda en el gallinero y lo sabe: cada mañana sale a cantar al balcón para que nadie lo olvide. '+seg.name+' le respira en la nuca, pero respirar no puntúa.',
+        'El corral tiene un solo gallo y es '+lider.name+'. El resto, gallinas ponedoras de ceros. Que '+seg.name+' no se confíe: en esta porra las plumas vuelan rápido.',
+        lider.name+' lidera con '+lider.pts+' puntos y un ego proporcional. Disfrútalo, gallo, que el corral es traicionero y '+seg.name+' afila el pico.',
+        'Kikirikí: '+lider.name+' despierta a la cuadrilla desde lo más alto del ranking. '+(vent===0?'Aunque ojo, que '+seg.name+' le ha igualado y esto es un gallinero de dos.':'Con '+vent+' de ventaja, canta tranquilo. De momento.'),
+      ],'gallo'+lider.name+f.nPartidos)}</div>
+      <div class="av">El Gallo se corona el 19 de julio. El último en cantar paga... no, ese paga la Cuchara. El Gallo cobra.</div>
+    </div>
+  </div>`;
 }
 function cucharaCard(f){
   // 🥄 ANTICAMPEONATO: lider de la tabla invertida (puntos totales con bonus)
@@ -1645,49 +1964,51 @@ async function fetchScores(){
   persist();
 }
 
-// ── ALINEACIONES (se publican ~1h antes del pitido) ──
-const LINEUPS={};  // matchIndex -> {h:[...], a:[...], last:epoch}
+// ── ALINEACIONES (se publican ~1h antes del pitido, se guardan para siempre) ──
+const LINEUPS={};  // matchIndex|'ko|key' -> {h:[...], a:[...], last:epoch}
+// restaurar alineaciones guardadas en el navegador
+Object.entries(SAVED.lineups||{}).forEach(([k,v])=>{if(v&&v.h)LINEUPS[k]=v;});
+
+async function pullLineup(cacheKey,id,now){
+  // ya tenemos once completo -> no volver a pedir (se conserva para siempre)
+  const cached=LINEUPS[cacheKey];
+  if(cached&&cached.h&&cached.h.length>=7&&cached.a.length>=7)return;
+  if(cached&&now-cached.last<5*60000)return; // reintento minimo 5 min
+  try{
+    const r=await fetch(BASE+'/summary?event='+id,{cache:'no-store'});
+    if(!r.ok){LINEUPS[cacheKey]={h:cached?cached.h:[],a:cached?cached.a:[],last:now};return;}
+    const d=await r.json();
+    const out={h:[],a:[],last:now};
+    (d.rosters||[]).forEach(ro=>{
+      const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
+      if(ro.homeAway==='home')out.h=names;else if(ro.homeAway==='away')out.a=names;
+    });
+    // solo sobrescribir si hemos conseguido onces de verdad (no pisar buenos con vacios)
+    if(out.h.length>=7&&out.a.length>=7){
+      LINEUPS[cacheKey]=out;
+      SAVED.lineups[cacheKey]={h:out.h,a:out.a,last:now};
+      persist();
+    } else if(!cached){
+      LINEUPS[cacheKey]={h:[],a:[],last:now};
+    }
+  }catch(e){if(!cached)LINEUPS[cacheKey]={h:[],a:[],last:now};}
+}
+
 async function fetchLineups(){
   const now=Date.now();
   for(let i=0;i<MATCHES.length;i++){
     const lv=LIVE[i];
     if(!lv||!lv.id||!lv.ts)continue;
     const mins=(lv.ts-now)/60000;
-    if(mins>70||mins<-15)continue;                  // solo ventana previa
-    const cached=LINEUPS[i];
-    if(cached&&(cached.h.length||now-cached.last<5*60000))continue;  // ya tenemos once o reintento <5min
-    try{
-      const r=await fetch(BASE+'/summary?event='+lv.id,{cache:'no-store'});
-      if(!r.ok){LINEUPS[i]={h:[],a:[],last:now};continue;}
-      const d=await r.json();
-      const out={h:[],a:[],last:now};
-      (d.rosters||[]).forEach(ro=>{
-        const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
-        if(ro.homeAway==='home')out.h=names;
-        else if(ro.homeAway==='away')out.a=names;
-      });
-      LINEUPS[i]=out;
-    }catch(e){LINEUPS[i]={h:[],a:[],last:now};}
+    // ventana ampliada: desde 90 min antes hasta 4h despues (cubre todo el partido)
+    if(mins>90||mins<-240)continue;
+    await pullLineup(i,lv.id,now);
   }
-  // eliminatorias
   for(const[key,e]of Object.entries(KO_EVENTS)){
     if(!e.ts||!e.id)continue;
     const mins=(e.ts-now)/60000;
-    if(mins>70||mins<-15)continue;
-    const ck='ko|'+key;
-    const cached=LINEUPS[ck];
-    if(cached&&(cached.h.length||now-cached.last<5*60000))continue;
-    try{
-      const r=await fetch(BASE+'/summary?event='+e.id,{cache:'no-store'});
-      if(!r.ok){LINEUPS[ck]={h:[],a:[],last:now};continue;}
-      const d=await r.json();
-      const out={h:[],a:[],last:now};
-      (d.rosters||[]).forEach(ro=>{
-        const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
-        if(ro.homeAway==='home')out.h=names;else if(ro.homeAway==='away')out.a=names;
-      });
-      LINEUPS[ck]=out;
-    }catch(e2){LINEUPS[ck]={h:[],a:[],last:now};}
+    if(mins>90||mins<-240)continue;
+    await pullLineup('ko|'+key,e.id,now);
   }
 }
 
