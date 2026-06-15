@@ -1624,16 +1624,15 @@ function buildNews(){
       const s='pill'+day;
       const quien=pick(PLAYERS,s+'q');
       const pildoras=[
-        {t:`📋 ENCUESTA: el 100% de la redacción cree que ${quien} no vio el partido entero`,b:`Margen de error: 0%. Muestra: nosotros. Metodología: mirar su quiniela. ${jab(quien,s+'j')||'Las conclusiones se explican solas.'}`},
-        {t:`📋 ÚLTIMA HORA: ${quien} jura que "esta jornada lo tenía clarísimo"`,b:`Fuentes presenciales confirman que lo dijo con la boca pequeña y la quiniela más pequeña todavía. La hemeroteca, implacable, guarda la captura.`},
-        {t:`📋 CIENCIA: estudio confirma que tirar una moneda iguala a la media de la Porra`,b:`La moneda, however, no presume en el grupo de WhatsApp ni manda audios de tres minutos explicando por qué falló. Ventaja para la moneda.`},
-        {t:`📋 SUCESOS: localizada la quiniela de ${quien}. Estaba escondida de la vergüenza`,b:`La encontraron debajo de la tabla de clasificación, temblando. Se le practicó la reanimación pero llegó sin puntos al lugar de los hechos.`},
         {t:`📋 METEOROLOGÍA: se esperan chubascos de fallos sobre el grupo, con ${quien} como epicentro`,b:`Aviso amarillo en toda la Porra. Recomendamos no salir a pronosticar sin paraguas ni autoestima. ${jab(quien,s+'j2')||''}`},
-        {t:`📋 ECONOMÍA: los puntos de ${quien} cotizan a la baja por decimoctava jornada consecutiva`,b:`Los analistas recomiendan vender. Los compañeros recomiendan consolar. La redacción recomienda seguir riéndose, que es gratis.`},
-        {t:`📋 CULTURA: la quiniela de ${quien} expuesta en el museo de arte abstracto`,b:`Los críticos la definen como "una obra valiente que rompe con toda lógica conocida, incluida la del fútbol". Entrada gratuita, salida con risa floja.`},
-        {t:`📋 DEPORTES: ${quien} ficha por la liga de pronosticadores... como ejemplo de lo que no hay que hacer`,b:`Le han ofrecido un puesto de profesor en la categoría "errores clásicos". Cobra en collejas. Acepta porque al menos cobra algo.`},
+        {t:`📋 METEOROLOGÍA: borrasca "${quien}" entra por el oeste cargada de pronósticos imposibles`,b:`La AEMET de la Porra declara alerta naranja. Vientos racheados de excusas y precipitación de ceros. ${jab(quien,s+'j3')||'Abríguense, que esto va para largo.'}`},
+        {t:`📋 METEOROLOGÍA: anticiclón de mediocridad estable sobre la cuadrilla un día más`,b:`Cielos despejados de aciertos y temperaturas bajo cero en el casillero de ${quien}. Sin cambios a la vista. ${jab(quien,s+'j4')||''}`},
+        {t:`📋 METEOROLOGÍA: alerta roja por tormenta de fallos, ${quien} en el ojo del huracán`,b:`Se recomienda no acercarse a su quiniela sin equipo de protección. Posibilidad de granizo de ridículos durante toda la jornada. ${jab(quien,s+'j5')||''}`},
+        {t:`📋 METEOROLOGÍA: niebla espesa en el criterio de ${quien}, visibilidad nula`,b:`Tráfico de puntos cortado en ambos sentidos. Se aconseja circular despacio y no fiarse de sus pronósticos como referencia. ${jab(quien,s+'j6')||''}`},
+        {t:`📋 METEOROLOGÍA: ola de calor de excusas tras el batacazo de ${quien}`,b:`Máximas históricas de "yo lo tenía" y mínimas de puntos reales. El bochorno durará lo que dure el Mundial. ${jab(quien,s+'j7')||''}`},
       ];
-      const p=pildoras[h32(s+'pick')%pildoras.length];
+      const dIdx=pdays.indexOf(day);
+      const p=pildoras[dIdx%pildoras.length];
       items.push({k:day+'w',c:'',m:`La píldora · ${fmtDay(day)}`,t:p.t,b:p.b});
     });
   }
