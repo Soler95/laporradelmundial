@@ -1617,10 +1617,12 @@ function buildNews(){
   items.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
   // ── 📋 PÍLDORAS: titulares absurdos de relleno (una por jornada completada) ──
   {
-    const pdays=[...new Set(finished.map(i=>MATCHES[i].iso))];
-    pdays.forEach(day=>{
-      const dayIdx=MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day);
-      if(!dayIdx.every(i=>LIVE[i]&&LIVE[i].status==='post'))return;
+    const pdays=[...new Set(finished.map(i=>MATCHES[i].iso))]
+      .filter(day=>MATCHES.map((m,i)=>i).filter(i=>MATCHES[i].iso===day).every(i=>LIVE[i]&&LIVE[i].status==='post'))
+      .sort();
+    // solo la pildora del dia mas reciente jugado
+    const ultimoDia=pdays[pdays.length-1];
+    [ultimoDia].filter(Boolean).forEach(day=>{
       const s='pill'+day;
       const quien=pick(PLAYERS,s+'q');
       const pildoras=[
