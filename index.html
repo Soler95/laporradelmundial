@@ -188,6 +188,7 @@ function persist(){try{localStorage.setItem('kuadri2026',JSON.stringify(SAVED));
 let LIVE=MATCHES.map(()=>null);
 let KO_EVENTS={};
 let QUALIFIED={r32:null,r16:null,qf:null,sf:null,fin:null};
+let ELIMINATED=new Set();
 let CHAMPION=null,THIRD=null,TOPSCORER=SAVED.topscorer,TOURNAMENT_DONE=false;
 
 function norm(n){
@@ -282,26 +283,40 @@ function renderMatches(){
   document.getElementById('matchList').innerHTML=html;
 }
 
+// La ronda que un equipo ALCANZA al ganar su cruce de la ronda anterior.
+const NEXT_KEY={r32:'r16',r16:'qf',qf:'sf',sf:'fin'};
 function processKnockouts(){
+  // Se reconstruye entero en cada refresco (idempotente): así los puntos y
+  // los tachados se actualizan al momento en cuanto ESPN da un resultado.
+  const Q={r32:new Set(),r16:new Set(),qf:new Set(),sf:new Set(),fin:new Set()};
+  const elim=new Set();
+  CHAMPION=null;THIRD=null;TOURNAMENT_DONE=false;
   KO_ROUNDS.forEach(rd=>{
     const evs=Object.values(KO_EVENTS).filter(e=>e.date>=rd.d1&&e.date<=rd.d2);
     if(!evs.length)return;
-    const teams=new Set();
     let lastWinner=null,allDone=true;
     evs.forEach(e=>{
-      teams.add(e.h);teams.add(e.a);
-      if(e.status!=='post')allDone=false;
-      else if(e.winner)lastWinner=e.winner;
+      // Equipos que han ALCANZADO esta ronda (el partido por el 3er puesto no da bonus de ronda)
+      if(rd.key!=='third'&&Q[rd.key]){Q[rd.key].add(e.h);Q[rd.key].add(e.a);}
+      if(e.status==='post'&&e.winner){
+        lastWinner=e.winner;
+        const loser=e.winner===e.h?e.a:e.h;
+        elim.add(loser);                       // el perdedor de un cruce KO queda eliminado
+        const nk=NEXT_KEY[rd.key];             // el ganador avanza ya a la siguiente ronda
+        if(nk&&Q[nk])Q[nk].add(e.winner);
+      }else if(e.status!=='post')allDone=false;
     });
-    if(rd.key==='fin'){
-      QUALIFIED.fin=teams;
-      if(allDone&&lastWinner){CHAMPION=lastWinner;TOURNAMENT_DONE=true;}
-    }else if(rd.key==='third'){
-      if(allDone&&lastWinner)THIRD=lastWinner;
-    }else{
-      QUALIFIED[rd.key]=teams;
-    }
+    if(rd.key==='fin'){if(allDone&&lastWinner){CHAMPION=lastWinner;TOURNAMENT_DONE=true;}}
+    else if(rd.key==='third'){if(allDone&&lastWinner)THIRD=lastWinner;}
   });
+  QUALIFIED.r32=Q.r32.size?Q.r32:null;
+  QUALIFIED.r16=Q.r16.size?Q.r16:null;
+  QUALIFIED.qf =Q.qf.size ?Q.qf :null;
+  QUALIFIED.sf =Q.sf.size ?Q.sf :null;
+  QUALIFIED.fin=Q.fin.size?Q.fin:null;
+  // Eliminados en fase de grupos: una vez conocidos los 32 de 16avos, el resto está fuera.
+  if(Q.r32.size>=32)ALL_TEAMS.forEach(t=>{if(!Q.r32.has(t))elim.add(t);});
+  ELIMINATED=elim;
 }
 
 function renderKnockouts(){
@@ -397,11 +412,13 @@ function renderPreds(){
 }
 
 function tagClass(teamEs,roundKey){
-  if(roundKey==='champ'){if(!CHAMPION)return '';return teamEn(teamEs)===CHAMPION?' ok':' ko';}
-  if(roundKey==='third'){if(!THIRD)return '';return teamEn(teamEs)===THIRD?' ok':' ko';}
+  const en=teamEn(teamEs);
+  if(roundKey==='champ'){if(!CHAMPION)return ELIMINATED.has(en)?' ko':'';return en===CHAMPION?' ok':' ko';}
+  if(roundKey==='third'){if(!THIRD)return '';return en===THIRD?' ok':' ko';}
   const q=QUALIFIED[roundKey];
-  if(!q)return '';
-  return q.has(teamEn(teamEs))?' ok':' ko';
+  if(q&&q.has(en))return ' ok';        // ya clasificado a esa ronda → verde
+  if(ELIMINATED.has(en))return ' ko';  // eliminado → rojo tachado
+  return '';                            // sigue vivo, aún sin jugar → neutro
 }
 function playerMatchesName(pick,winner){
   if(!pick||!winner)return false;
