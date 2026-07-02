@@ -254,6 +254,16 @@ select{
   background:rgba(9,17,34,.55);animation:fadein .18s ease;
 }
 .bdetail .bcard{border-color:rgba(29,52,87,.7)}
+
+/* ── Pronósticos de eliminatorias: quién apostó por quién ── */
+.koCols{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;padding:.55rem .75rem}
+.koCol{min-width:0}
+.koTeam{font-size:.72rem;font-weight:800;margin-bottom:.35rem;color:var(--txt)}
+.koTeam.ok{color:var(--green)}
+.koTeam.ko{color:var(--red)}
+.koN{font-size:.6rem;color:var(--dim);font-weight:700}
+.koNone{font-size:.6rem;color:var(--dim);padding:0 .75rem .55rem;line-height:1.5}
+@media(max-width:420px){.koCols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -565,6 +575,58 @@ function renderDaily(){
   }).join('');
 }
 
+// ── PRONÓSTICOS DE ELIMINATORIAS: quién apostó por quién en cada cruce ──
+// Para cada cruce, la apuesta relevante es "¿a quién puse en la RONDA SIGUIENTE?"
+// (en un 16avos España-Austria: quién tiene a España en octavos y quién a Austria).
+// Un jugador puede aparecer en los dos lados si metió a ambos equipos en esa ronda.
+function renderKoPicks(){
+  const evs=Object.values(KO_EVENTS).sort((a,b)=>a.date.localeCompare(b.date)||((a.ts||0)-(b.ts||0)));
+  if(!evs.length)return '';
+  const NEXT_BET={
+    r32:{key:'r16',lab:'¿quién pasa a octavos?',pts:BONUS.r16},
+    r16:{key:'qf',lab:'¿quién pasa a cuartos?',pts:BONUS.qf},
+    qf:{key:'sf',lab:'¿quién pasa a semis?',pts:BONUS.sf},
+    sf:{key:'fin',lab:'¿quién llega a la final?',pts:BONUS.fin},
+    fin:{key:'champ',lab:'¿quién es CAMPEÓN?',pts:BONUS.champ},
+    third:{key:'third',lab:'¿quién queda 3º?',pts:BONUS.third}
+  };
+  let html='',lastRd='';
+  evs.forEach(e=>{
+    const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);
+    if(!rd)return;
+    const nb=NEXT_BET[rd.key];if(!nb)return;
+    if(rd.key!==lastRd){
+      html+=`<div class="slabel">⚡ ${rd.label} · ${nb.lab} <span style="color:var(--dim);font-weight:400;letter-spacing:0;text-transform:none">+${nb.pts} por acierto</span></div>`;
+      lastRd=rd.key;
+    }
+    const hes=EN_ES[e.h]||e.h,aes=EN_ES[e.a]||e.a;
+    const hf=EN_FLAG[e.h]||'⚽',af=EN_FLAG[e.a]||'⚽';
+    const single=nb.key==='champ'||nb.key==='third';
+    const hN=[],aN=[],nN=[];
+    PLAYERS.forEach((p,j)=>{
+      const arr=single?[PICKS[nb.key][j]]:PICKS[nb.key][j];
+      const hHas=arr.some(t=>t&&teamEn(t)===e.h);
+      const aHas=arr.some(t=>t&&teamEn(t)===e.a);
+      if(hHas)hN.push(p);
+      if(aHas)aN.push(p);
+      if(!hHas&&!aHas)nN.push(p);
+    });
+    let hCls='',aCls='',res='';
+    if(e.status==='post'){res=`${e.hs}-${e.as} · FIN`;hCls=e.winner===e.h?' ok':' ko';aCls=e.winner===e.a?' ok':' ko';}
+    else if(e.status==='in'){res=`${e.hs}-${e.as} ⏱ EN VIVO`;}
+    else res=parseInt(e.date.slice(6))+' '+(e.date.slice(4,6)==='06'?'Jun':'Jul')+(e.t?' · '+e.t:'');
+    const col=(flag,name,cls,names)=>
+      `<div class="koCol"><div class="koTeam${cls}">${flag} ${name} <span class="koN">×${names.length}</span></div>
+       <div class="btags">${names.length?names.map(n=>`<span class="btag${cls}">${n}</span>`).join(''):'<span class="btag" style="opacity:.45">nadie</span>'}</div></div>`;
+    html+=`<div class="pmatch">
+      <div class="pmh">${hf} ${hes} <span style="color:var(--dim)">vs</span> ${af} ${aes}<span class="res">${res}</span></div>
+      <div class="koCols">${col(hf,hes,hCls,hN)}${col(af,aes,aCls,aN)}</div>
+      ${nN.length?`<div class="koNone">Sin apuesta en este cruce: ${nN.join(', ')}</div>`:''}
+    </div>`;
+  });
+  return html;
+}
+
 function renderPreds(){
   let html='',curDay='';
   DAY_ORDER.forEach(i=>{
@@ -587,7 +649,7 @@ function renderPreds(){
     }).join('');
     html+=`<div class="pmatch"><div class="pmh">${m.hf} ${m.home} <span style="color:#3a5a7a">vs</span> ${m.af} ${m.away}<span class="res">${resTxt}</span></div><div class="pgrid">${cells}</div></div>`;
   });
-  document.getElementById('predList').innerHTML=html;
+  document.getElementById('predList').innerHTML=renderKoPicks()+html;
 }
 
 function tagClass(teamEs,roundKey){
