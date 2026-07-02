@@ -264,6 +264,42 @@ select{
 .koN{font-size:.6rem;color:var(--dim);font-weight:700}
 .koNone{font-size:.6rem;color:var(--dim);padding:0 .75rem .55rem;line-height:1.5}
 @media(max-width:420px){.koCols{grid-template-columns:1fr}}
+
+/* ── Gráfico de evolución ── */
+.chartbox{
+  background:linear-gradient(180deg,var(--card),#0c1830);
+  border:1px solid var(--line);border-radius:var(--r);padding:.55rem .5rem .3rem;
+}
+.chartbox svg{display:block}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:.55rem}
+.chip{
+  font-size:.62rem;font-weight:700;padding:3px 10px;border-radius:999px;cursor:pointer;
+  background:var(--card2);border:1px solid var(--line2);color:var(--mut);
+  user-select:none;-webkit-user-select:none;transition:border-color .15s;
+}
+.chip:hover{border-color:var(--gold)}
+.chip.sel{background:#123320;border-color:#2f6b40;color:var(--green)}
+
+/* ── Resúmenes ── */
+.rescard{
+  background:linear-gradient(180deg,var(--card),#0c1830);
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:.6rem .75rem;margin-bottom:.45rem;
+  display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;
+}
+.resmain{flex:1;min-width:180px}
+.resteams{font-size:.8rem;font-weight:700}
+.ressc{color:var(--gold2);font-variant-numeric:tabular-nums;margin:0 .25rem}
+.reslab{font-size:.6rem;color:var(--dim);margin-top:2px}
+.resbtns{display:flex;gap:6px;flex-wrap:wrap}
+.vbtn{
+  display:inline-block;font-size:.66rem;font-weight:800;text-decoration:none;
+  padding:.4rem .8rem;border-radius:999px;color:#fff;
+  background:linear-gradient(135deg,#e83c3c,#b81f1f);border:1px solid #ff5a5a55;
+  transition:filter .15s;
+}
+.vbtn:hover{filter:brightness(1.15)}
+.vbtn.espn{background:var(--card2);border:1px solid var(--line2);color:var(--mut)}
 </style>
 </head>
 <body>
@@ -282,6 +318,7 @@ select{
   <button onclick="show('pronos',this)">Pronosticos</button>
   <button onclick="show('apuestas',this)">Apuestas</button>
   <button onclick="show('noticias',this)">📰 Porra News</button>
+  <button onclick="show('resumen',this)">🎬 Resúmenes</button>
   <button onclick="show('fama',this)">🏅 Salón</button>
   <button onclick="show('ranking',this)">🏆 Ranking</button>
 </nav>
@@ -312,6 +349,11 @@ select{
   <div class="note">📰 Porra News — periodismo de máxima rigurosidad. Las noticias se generan automáticamente con cada resultado.</div>
 </div>
 
+<div id="resumen" class="page">
+  <div id="resList"></div>
+  <div class="note">🎬 "Ver resumen" abre YouTube con la búsqueda del partido ya hecha — el vídeo oficial sale el primero. Cuando ESPN publica su propio clip, aparece además el enlace directo.</div>
+</div>
+
 <div id="fama" class="page">
   <div id="famaList"></div>
   <div class="note">🏅 Salón de la Fama y la Vergüenza — premios en disputa permanente, se actualizan con cada partido. Los destronamientos salen en Porra News.</div>
@@ -323,6 +365,7 @@ select{
     <thead><tr><th>#</th><th>Quinielista</th><th class="rc">Exact</th><th class="rc">Signo</th><th class="rc">Bonus</th><th style="text-align:right">Pts</th></tr></thead>
     <tbody id="rankBody"></tbody>
   </table>
+  <div id="chart"></div>
   <div class="note">Partidos: signo = 1 pt · exacto = +3 pts. Bonus por clasificados y premios. Se recalcula en vivo. Los resultados finalizados quedan guardados en el navegador.</div>
 </div>
 
@@ -349,7 +392,7 @@ function show(id,btn){
 }
 
 // ── PERSISTENCIA ─────────────────────────────────────
-let SAVED={results:{},ko:{},topscorer:null,lineups:{}};
+let SAVED={results:{},ko:{},topscorer:null,lineups:{},videos:{}};
 try{const s=localStorage.getItem('kuadri2026');if(s)SAVED=Object.assign(SAVED,JSON.parse(s));}catch(e){}
 function persist(){try{localStorage.setItem('kuadri2026',JSON.stringify(SAVED));}catch(e){}}
 
@@ -754,6 +797,120 @@ function renderRanking(){
     <td class="rpos">${med[i]||i+1}</td><td class="rnm">${t.name}</td>
     <td class="rc">${t.ex}</td><td class="rc">${t.sg}</td><td class="rc">${t.bn}</td>
     <td class="rpt">${t.pts}</td></tr>`).join('');
+}
+
+// ── 📈 GRÁFICO DE EVOLUCIÓN: la general día a día (SVG puro, sin librerías) ──
+let CHART_SEL=null;
+function selChart(j){CHART_SEL=CHART_SEL===j?null:j;renderChart();}
+function renderChart(){
+  const el=document.getElementById('chart');if(!el)return;
+  const hoyIso=new Date().toLocaleDateString('sv-SE');
+  const daySet=new Set();
+  MATCHES.forEach((m,i)=>{const lv=LIVE[i];if(lv&&lv.status==='post')daySet.add(m.iso);});
+  Object.values(KO_EVENTS).forEach(e=>{const d=e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6);if(d<=hoyIso)daySet.add(d);});
+  const days=[...daySet].sort();
+  if(days.length<2){el.innerHTML='';return;}
+  // fecha en la que cada equipo "ganó" cada bonus de ronda (la primera conocida)
+  const award={};
+  const add=(rk,team,d)=>{const k=rk+'|'+team;if(!award[k]||d<award[k])award[k]=d;};
+  Object.values(KO_EVENTS).forEach(e=>{
+    const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);if(!rd)return;
+    const d=e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6);
+    if(rd.key!=='third'){add(rd.key,e.h,d);add(rd.key,e.a,d);}
+    if(e.status==='post'&&e.winner){
+      const nk=NEXT_KEY[rd.key];if(nk)add(nk,e.winner,d);
+      if(rd.key==='fin')add('champ',e.winner,d);
+      if(rd.key==='third')add('third',e.winner,d);
+    }
+  });
+  // serie acumulada por jugador: puntos de partidos + bonus el día en que se ganaron
+  const series=PLAYERS.map((p,j)=>{
+    let acc=0;
+    const ys=days.map(day=>{
+      MATCHES.forEach((m,i)=>{
+        const lv=LIVE[i];
+        if(m.iso===day&&lv&&lv.status==='post'){
+          const pp=pointsFor(m.preds[j],parseInt(lv.hs),parseInt(lv.as));
+          if(pp)acc+=pp;
+        }
+      });
+      Object.entries(award).forEach(([k,d])=>{
+        if(d!==day)return;
+        const parts=k.split('|'),rk=parts[0],team=parts[1];
+        if(rk==='champ'||rk==='third'){if(teamEn(PICKS[rk][j]||'')===team)acc+=BONUS[rk];}
+        else if(PICKS[rk][j].some(t=>teamEn(t)===team))acc+=BONUS[rk];
+      });
+      return acc;
+    });
+    return{p,j,ys,tot:ys[ys.length-1]};
+  });
+  const orden=[...series].sort((a,b)=>b.tot-a.tot);
+  const rankOf={};orden.forEach((s,i)=>rankOf[s.j]=i);
+  const maxY=Math.max(10,...orden.map(s=>s.tot));
+  const W=720,H=300,L=36,R=10,T=12,B=26;
+  const X=i=>L+(W-L-R)*i/(days.length-1);
+  const Y=v=>T+(H-T-B)*(1-v/maxY);
+  let g='';
+  for(let k=0;k<=4;k++){
+    const v=Math.round(maxY*k/4);
+    g+=`<line x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}" stroke="#1d3457" stroke-width="1"/><text x="${L-6}" y="${Y(v)+3}" text-anchor="end" font-size="9" fill="#5d7899">${v}</text>`;
+  }
+  const step=Math.max(1,Math.ceil(days.length/6));
+  days.forEach((d,i)=>{
+    if(i%step&&i!==days.length-1)return;
+    g+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="9" fill="#5d7899">${parseInt(d.slice(8))}/${parseInt(d.slice(5,7))}</text>`;
+  });
+  const colTop=['#f3d27a','#aebfd6','#e0975a'];
+  const path=s=>s.ys.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+  let lines='';
+  series.forEach(s=>{if(rankOf[s.j]>2&&s.j!==CHART_SEL)lines+=`<path d="${path(s)}" fill="none" stroke="#33507a" stroke-width="1.3" opacity=".55"/>`;});
+  orden.slice(0,3).forEach((s,i)=>{if(s.j!==CHART_SEL)lines+=`<path d="${path(s)}" fill="none" stroke="${colTop[i]}" stroke-width="2.2"/>`;});
+  if(CHART_SEL!==null){const s=series[CHART_SEL];lines+=`<path d="${path(s)}" fill="none" stroke="#4ade80" stroke-width="3"/>`;}
+  const chips=orden.map((s,i)=>
+    `<span class="chip${s.j===CHART_SEL?' sel':''}"${i<3&&s.j!==CHART_SEL?` style="color:${colTop[i]};border-color:${colTop[i]}55"`:''} onclick="selChart(${s.j})">${i<3?['🥇','🥈','🥉'][i]+' ':''}${s.p} · ${s.tot}</span>`
+  ).join('');
+  el.innerHTML=`<div class="slabel" style="margin-top:1.2rem">📈 La general, día a día</div>
+    <div class="chartbox"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img">${g}${lines}</svg></div>
+    <div class="chips">${chips}</div>
+    <div class="bhint" style="margin-top:.45rem">Toca un nombre para iluminar su línea. Incluye puntos de partidos y bonus el día en que se ganaron (Bota y Balón de Oro se suman al final del torneo).</div>`;
+}
+
+// ── 🎬 RESÚMENES: partidos terminados con enlace al vídeo ──
+function renderResumen(){
+  const el=document.getElementById('resList');if(!el)return;
+  const rows=[];
+  MATCHES.forEach((m,i)=>{
+    const lv=LIVE[i];if(!lv||lv.status!=='post')return;
+    rows.push({d:m.iso,ts:lv.ts||0,hes:m.home,aes:m.away,hf:m.hf,af:m.af,hs:lv.hs,as:lv.as,lab:'Fase de grupos · Grupo '+m.g,vid:(SAVED.videos||{})[i]});
+  });
+  Object.entries(KO_EVENTS).forEach(([key,e])=>{
+    if(e.status!=='post')return;
+    const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);
+    rows.push({d:e.date.slice(0,4)+'-'+e.date.slice(4,6)+'-'+e.date.slice(6),ts:e.ts||0,
+      hes:EN_ES[e.h]||e.h,aes:EN_ES[e.a]||e.a,hf:EN_FLAG[e.h]||'⚽',af:EN_FLAG[e.a]||'⚽',
+      hs:e.hs,as:e.as,lab:rd?rd.label:'Eliminatorias',vid:(SAVED.videos||{})['ko|'+key]});
+  });
+  if(!rows.length){
+    el.innerHTML='<div class="note">Aún no hay partidos terminados. En cuanto acabe el primero, aquí estará su resumen.</div>';
+    return;
+  }
+  rows.sort((a,b)=>b.d.localeCompare(a.d)||((b.ts||0)-(a.ts||0)));
+  let html='',cur='';
+  rows.forEach(r=>{
+    if(r.d!==cur){html+=`<div class="slabel">📅 ${fmtDay(r.d)}</div>`;cur=r.d;}
+    const q=encodeURIComponent(`${r.hes} vs ${r.aes} ${r.hs}-${r.as} resumen Mundial 2026`);
+    html+=`<div class="rescard">
+      <div class="resmain">
+        <div class="resteams">${r.hf} ${r.hes} <b class="ressc">${r.hs}–${r.as}</b> ${r.af} ${r.aes}</div>
+        <div class="reslab">${r.lab}</div>
+      </div>
+      <div class="resbtns">
+        <a class="vbtn" target="_blank" rel="noopener" href="https://www.youtube.com/results?search_query=${q}">▶ Ver resumen</a>
+        ${r.vid?`<a class="vbtn espn" target="_blank" rel="noopener" href="${r.vid}">🎞 Clip ESPN</a>`:''}
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
 }
 
 // ── Porra NEWS ──────────────────────────────────────
@@ -1725,7 +1882,7 @@ function buildNews(){
     if(!name)return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
       b:`Hoy toca hablar de ${cafe.t}. ${cafe.s}<br><br>Quisiéramos comparar esta historia con alguno de ustedes, pero el Salón de la Fama aún no tiene titulares: ni un mérito, ni siquiera una vergüenza consolidada. Quince participantes y ni medio personaje. La historia del fútbol tiene de todo; esta Porra, de momento, no tiene nada. Volveremos cuando alguno haga algo digno de mención, para bien o (más probable) para mal.`};
     return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
-      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>${(function(){const j=jab(pick(PLAYERS,day+'cafejw'),day+'cafej');return j?'<b>Y de propina:</b> '+j+'<br><br>':'';})()}Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros, por eso os recordamos que Ander la tiene pequeña.`};
+      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>${(function(){const j=jab(pick(PLAYERS,day+'cafejw'),day+'cafej');return j?'<b>Y de propina:</b> '+j+'<br><br>':'';})()}Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros.`};
   }
 
   // ── ☕ ANÁLISIS MATINAL (visible desde las 9:00 hora de Madrid) ──
@@ -1898,6 +2055,73 @@ function buildNews(){
       const cf=cafeFor(day);
       if(cf)items.push({k:day+'a5',c:'cafe',m:'La hora del café · '+fmtDay(day),t:cf.t,b:cf.b});
     }
+  }
+
+  // ── 💰 LO QUE SE JUEGA HOY: bonus en el alambre en los cruces del día ──
+  {
+    const byDay={};
+    Object.values(KO_EVENTS).forEach(e=>{(byDay[e.date]=byDay[e.date]||[]).push(e);});
+    const NB={r32:'r16',r16:'qf',qf:'sf',sf:'fin',fin:'champ',third:'third'};
+    const hoyIso=new Date().toLocaleDateString('sv-SE');
+    Object.keys(byDay).sort().forEach(dk=>{
+      const dia=dk.slice(0,4)+'-'+dk.slice(4,6)+'-'+dk.slice(6);
+      if(dia>hoyIso)return; // los días futuros aún no
+      const evs=byDay[dk];
+      const s='enjuego'+dk;
+      // por jugador: puntos que se deciden hoy (equipo suyo en la ronda siguiente que juega hoy)
+      const stakes=PLAYERS.map((p,j)=>{
+        let pts=0,seguros=0;const det=[];
+        evs.forEach(e=>{
+          const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);if(!rd)return;
+          const nk=NB[rd.key];if(!nk)return;
+          const val=BONUS[nk];
+          const single=nk==='champ'||nk==='third';
+          const arr=single?[PICKS[nk][j]]:PICKS[nk][j];
+          const hHas=arr.some(t=>t&&teamEn(t)===e.h),aHas=arr.some(t=>t&&teamEn(t)===e.a);
+          if(hHas&&aHas)seguros+=val; // apostó por los dos: gane quien gane, cobra
+          else if(hHas||aHas){pts+=val;det.push((EN_ES[hHas?e.h:e.a]||(hHas?e.h:e.a))+' +'+val);}
+        });
+        return{p,j,pts,seguros,det};
+      });
+      // campeones pisando el césped hoy (fuera de la final, que ya es a todo o nada)
+      const peligro=[];
+      evs.forEach(e=>{
+        const rd=KO_ROUNDS.find(r=>e.date>=r.d1&&e.date<=r.d2);
+        if(!rd||rd.key==='fin'||rd.key==='third')return;
+        PLAYERS.forEach((p,j)=>{
+          const ch=teamEn(PICKS.champ[j]||'');
+          if((ch===e.h||ch===e.a)&&!peligro.includes(p))peligro.push(p);
+        });
+      });
+      const conAlgo=stakes.filter(x=>x.pts>0).sort((a,b)=>b.pts-a.pts||b.seguros-a.seguros);
+      if(!conAlgo.length&&!peligro.length)return;
+      const esHoy=dia===hoyIso;
+      const top=conAlgo[0];
+      const cero=stakes.filter(x=>x.pts===0&&x.seguros===0).map(x=>x.p);
+      const lineas=conAlgo.map(x=>
+        `<b>${x.p}</b> — ${x.pts} pts en el alambre (${x.det.join(', ')})${x.seguros?` <span style="color:#4ade80">+ ${x.seguros} ya asegurados</span>`:''}`
+      ).join('<br>');
+      const soloSeguros=stakes.filter(x=>x.pts===0&&x.seguros>0);
+      const intro=pick([
+        `${evs.length===1?'Hoy hay un cruce':'Hoy hay '+evs.length+' cruces'} y la calculadora echa humo. Esto es lo que cada uno tiene encima de la mesa, ordenado de más infarto a menos:`,
+        `La redacción ha hecho las cuentas que ustedes no se atreven a hacer. Puntos que se deciden ${esHoy?'hoy':'ese día'}, de mayor a menor sufrimiento:`,
+        `Día de eliminatorias: alguien va a dormir feliz y alguien va a mirar su cuadro como quien mira un accidente. Lo que hay en juego:`,
+      ],s+'i');
+      const colas=[];
+      if(soloSeguros.length)colas.push(`Con la vida resuelta gane quien gane: ${lista(soloSeguros.map(x=>x.p))} (apostaron por los dos lados del cruce, la jugada del cobarde ilustrado).`);
+      if(cero.length)colas.push(`Y viendo el partido de palco, sin nada en juego: ${lista(cero)}. Tranquilidad o irrelevancia, según se mire.`);
+      if(peligro.length)colas.push(`🔥 <b>Con el CAMPEÓN en el césped:</b> ${lista(peligro)}. Si su equipo tropieza ${esHoy?'hoy':'ese día'}, se les mueren los 20 puntos gordos y el orgullo entero.`);
+      const dardo=top?(jab(top.p,s+'j')?`<br><br><b>El dardo de la redacción:</b> ${top.p} es quien más se juega, y ${jab(top.p,s+'j')}`:''):'';
+      items.push({k:dia+'a3',c:'',m:`💰 ${esHoy?'Lo que se juega hoy':'Lo que se jugaba'} · ${fmtDay(dia)}`,
+        t:top
+          ?pick([
+            `💰 ${top.p.toUpperCase()} SE JUEGA ${top.pts} PUNTOS ${esHoy?'HOY':'ESE DÍA'} Y LA REDACCIÓN YA HA PEDIDO PALOMITAS`,
+            `💰 DÍA DE CAJA: ${top.p} lidera la lista de los que más se juegan (${top.pts} pts en el alambre)`,
+            `💰 HOY SE REPARTE DINERO (BUENO, PUNTOS): ${top.p} el que más arriesga, con ${top.pts}`,
+          ],s+'t')
+          :`💰 CAMPEONES EN JUEGO: hay gente que ${esHoy?'hoy':'ese día'} no va a respirar`,
+        b:`${intro}<br><br>${lineas||'—'}${colas.length?'<br><br>'+colas.join('<br><br>'):''}${dardo}`});
+    });
   }
 
   items.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0);
@@ -2268,6 +2492,21 @@ const LINEUPS={};  // matchIndex|'ko|key' -> {h:[...], a:[...], last:epoch}
 // restaurar alineaciones guardadas en el navegador
 Object.entries(SAVED.lineups||{}).forEach(([k,v])=>{if(v&&v.h)LINEUPS[k]=v;});
 
+// cosecha el clip de vídeo del partido si ESPN lo incluye en el summary
+function harvestVideo(cacheKey,d){
+  try{
+    for(const v of (d.videos||[])){
+      const L=v&&v.links;if(!L)continue;
+      const href=(L.web&&L.web.href)||(L.source&&L.source.href)||(L.mobile&&L.mobile.href);
+      if(href){
+        SAVED.videos=SAVED.videos||{};
+        if(SAVED.videos[cacheKey]!==href){SAVED.videos[cacheKey]=href;persist();}
+        return;
+      }
+    }
+  }catch(e){/* sin video: no pasa nada */}
+}
+
 async function pullLineup(cacheKey,id,now){
   // ya tenemos once completo -> no volver a pedir (se conserva para siempre)
   const cached=LINEUPS[cacheKey];
@@ -2277,6 +2516,7 @@ async function pullLineup(cacheKey,id,now){
     const r=await fetch(BASE+'/summary?event='+id,{cache:'no-store'});
     if(!r.ok){LINEUPS[cacheKey]={h:cached?cached.h:[],a:cached?cached.a:[],last:now};return;}
     const d=await r.json();
+    harvestVideo(cacheKey,d);
     const out={h:[],a:[],last:now};
     (d.rosters||[]).forEach(ro=>{
       const names=(ro.roster||[]).filter(x=>x.starter).map(x=>x.athlete&&x.athlete.displayName).filter(Boolean);
@@ -2309,6 +2549,35 @@ async function fetchLineups(){
     if(mins>90||mins<-240)continue;
     await pullLineup('ko|'+key,e.id,now);
   }
+  // pasada suave de VÍDEOS: partidos terminados en los últimos 3 días sin clip
+  // (máximo 3 consultas por refresco, reintento cada 30 min)
+  let vleft=3;
+  for(let i=0;i<MATCHES.length&&vleft>0;i++){
+    const lv=LIVE[i];
+    if(!lv||lv.status!=='post'||!lv.id||!lv.ts)continue;
+    if(now-lv.ts>72*3600000)continue;
+    if((SAVED.videos||{})[i])continue;
+    await pullVideo(i,lv.id,now);vleft--;
+  }
+  for(const[key,e]of Object.entries(KO_EVENTS)){
+    if(vleft<=0)break;
+    if(e.status!=='post'||!e.id||!e.ts)continue;
+    if(now-e.ts>72*3600000)continue;
+    if((SAVED.videos||{})['ko|'+key])continue;
+    await pullVideo('ko|'+key,e.id,now);vleft--;
+  }
+}
+
+const VIDEO_TRY={};
+async function pullVideo(cacheKey,id,now){
+  if((SAVED.videos||{})[cacheKey])return;
+  if(VIDEO_TRY[cacheKey]&&now-VIDEO_TRY[cacheKey]<30*60000)return;
+  VIDEO_TRY[cacheKey]=now;
+  try{
+    const r=await fetch(BASE+'/summary?event='+id,{cache:'no-store'});
+    if(!r.ok)return;
+    harvestVideo(cacheKey,await r.json());
+  }catch(e){}
 }
 
 let SCORERS_NEXT_TRY=0;  // backoff: si /leaders no existe aun, reintenta cada 30 min
@@ -2350,11 +2619,11 @@ async function refresh(){
   processKnockouts();
   await fetchLineups();
   await fetchScorers();
-  [renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
+  [renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderChart,renderResumen,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 }
 
 initSel();
-[renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
+[renderMatches,renderKnockouts,renderDaily,renderPreds,renderBets,renderRanking,renderChart,renderResumen,renderNews,renderFama].forEach(f=>{try{f()}catch(e){console.error('render:',e)}});
 refresh();
 setInterval(refresh,60000);
 </script>
