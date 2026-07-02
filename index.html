@@ -223,6 +223,37 @@ select{
 }
 .share-btn:hover{border-color:var(--gold)}
 .share-btn:active{background:var(--line)}
+
+/* ── Apuestas: carrera del bonus ── */
+.cpulse{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.5rem}
+.cchip-wrap{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}
+.cnames{font-size:.6rem;color:var(--dim);line-height:1.45;flex:1;min-width:150px}
+.bhint{font-size:.62rem;color:var(--dim);margin:-.1rem 0 .55rem;line-height:1.5}
+.brow{
+  display:flex;align-items:center;gap:.6rem;
+  background:linear-gradient(180deg,var(--card),#0c1830);
+  border:1px solid var(--line);border-radius:var(--r);
+  padding:.55rem .75rem;margin-bottom:.45rem;cursor:pointer;
+  transition:border-color .15s;user-select:none;-webkit-user-select:none;
+}
+.brow:hover{border-color:var(--line2)}
+.brow.open{border-color:var(--gold);border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0}
+.bpos{font-weight:800;color:var(--gold);min-width:28px;text-align:center;font-size:.88rem}
+.bmain{flex:1;min-width:0}
+.bname{font-size:.84rem;font-weight:700}
+.bsub{font-size:.62rem;color:var(--dim);margin-top:2px}
+.bok{color:var(--green);font-weight:700}
+.bko{color:var(--red);font-weight:700}
+.bpend{color:var(--mut)}
+.bpts{font-weight:800;color:var(--gold2);font-size:.98rem;font-variant-numeric:tabular-nums}
+.bchev{color:var(--dim);font-size:.72rem;min-width:14px;text-align:center}
+.bdetail{
+  border:1px solid var(--gold);border-top:none;
+  border-radius:0 0 var(--r) var(--r);
+  padding:.6rem .6rem .15rem;margin:-1px 0 .55rem;
+  background:rgba(9,17,34,.55);animation:fadein .18s ease;
+}
+.bdetail .bcard{border-color:rgba(29,52,87,.7)}
 </style>
 </head>
 <body>
@@ -262,7 +293,6 @@ select{
 </div>
 
 <div id="apuestas" class="page">
-  <select id="playerSel" onchange="renderBets()"></select>
   <div id="betList"></div>
   <div class="note">Bonus: 16avos +3 · octavos +5 · cuartos +8 · semis +12 · final +16 · Campeon +20 · 3er puesto +8 · Bota de Oro +10 · Balon de Oro +5.</div>
 </div>
@@ -583,20 +613,48 @@ function balonClass(j){
   if(!MANUAL_AWARDS.balon)return '';
   return playerMatchesName(PICKS.balon[j],MANUAL_AWARDS.balon)?' ok':' ko';
 }
+// ── APUESTAS: carrera del bonus (los 15 a la vista, toca para desplegar) ──
+let OPEN_BETS=new Set();
+function toggleBet(j){OPEN_BETS.has(j)?OPEN_BETS.delete(j):OPEN_BETS.add(j);renderBets();}
 function renderBets(){
-  const j=parseInt(document.getElementById('playerSel').value);
+  const flag=es=>EN_FLAG[teamEn(es)]||'⚽';
+  // 1) El pulso del campeón: quién apuesta por quién
+  const groups={};
+  PLAYERS.forEach((p,j)=>{const c=PICKS.champ[j]||'—';(groups[c]=groups[c]||[]).push(p);});
+  const pulse=Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([team,names])=>
+    `<div class="cchip-wrap"><span class="btag${tagClass(team,'champ')}" style="font-size:.72rem;padding:4px 12px;flex-shrink:0">${flag(team)} ${team} ×${names.length}</span><div class="cnames">${names.join(' · ')}</div></div>`
+  ).join('');
+  // 2) La carrera del bonus: ranking en vivo de las apuestas de eliminatorias
+  const ROUND_DEFS=[['r32','16avos (+3 c/u)'],['r16','Octavos (+5 c/u)'],['qf','Cuartos (+8 c/u)'],['sf','Semifinales (+12 c/u)'],['fin','Final (+16 c/u)']];
+  const rows=PLAYERS.map((p,j)=>{
+    let ok=0,dead=0,pend=0;
+    ROUND_DEFS.forEach(([key])=>{PICKS[key][j].forEach(t=>{const c=tagClass(t,key);if(c===' ok')ok++;else if(c===' ko')dead++;else pend++;});});
+    [['champ',PICKS.champ[j]],['third',PICKS.third[j]]].forEach(([key,t])=>{if(!t)return;const c=tagClass(t,key);if(c===' ok')ok++;else if(c===' ko')dead++;else pend++;});
+    return{p,j,ok,dead,pend,pts:bonusPoints(j)};
+  }).sort((a,b)=>b.pts-a.pts||b.ok-a.ok||a.dead-b.dead);
+  const med=['🥇','🥈','🥉'];
   const sect=(title,key,items)=>`<div class="bcard"><div class="bt">${title}</div><div class="btags">${items.map(t=>`<span class="btag${tagClass(t,key)}">${t}</span>`).join('')}</div></div>`;
-  let html='';
-  html+=sect('16avos (+3 c/u)','r32',PICKS.r32[j]);
-  html+=sect('Octavos (+5 c/u)','r16',PICKS.r16[j]);
-  html+=sect('Cuartos (+8 c/u)','qf',PICKS.qf[j]);
-  html+=sect('Semifinales (+12 c/u)','sf',PICKS.sf[j]);
-  html+=sect('Final (+16 c/u)','fin',PICKS.fin[j]);
-  html+=sect('Campeon (+20)','champ',[PICKS.champ[j]||'—']);
-  html+=sect('3er puesto (+8)','third',[PICKS.third[j]||'—']);
-  html+=`<div class="bcard"><div class="bt">Bota de Oro (+10)</div><div class="btags"><span class="btag${botaClass(j)}">${PICKS.bota[j]||'—'}</span></div></div>`;
-  html+=`<div class="bcard"><div class="bt">Balon de Oro (+5)</div><div class="btags"><span class="btag${balonClass(j)}">${PICKS.balon[j]||'—'}</span></div></div>`;
-  document.getElementById('betList').innerHTML=html;
+  const race=rows.map((r,i)=>{
+    const open=OPEN_BETS.has(r.j);
+    let det='';
+    if(open){
+      det=ROUND_DEFS.map(([key,title])=>sect(title,key,PICKS[key][r.j])).join('')
+        +sect('Campeón (+20)','champ',[PICKS.champ[r.j]||'—'])
+        +sect('3er puesto (+8)','third',[PICKS.third[r.j]||'—'])
+        +`<div class="bcard"><div class="bt">Bota de Oro (+10)</div><div class="btags"><span class="btag${botaClass(r.j)}">${PICKS.bota[r.j]||'—'}</span></div></div>`
+        +`<div class="bcard"><div class="bt">Balón de Oro (+5)</div><div class="btags"><span class="btag${balonClass(r.j)}">${PICKS.balon[r.j]||'—'}</span></div></div>`;
+    }
+    return `<div class="brow${open?' open':''}" onclick="toggleBet(${r.j})">
+      <span class="bpos">${med[i]||(i+1)}</span>
+      <div class="bmain"><div class="bname">${r.p}</div>
+      <div class="bsub"><span class="bok">✓ ${r.ok}</span> · <span class="bko">✗ ${r.dead}</span> · <span class="bpend">⏳ ${r.pend} en juego</span></div></div>
+      <div class="bpts">+${r.pts}</div><span class="bchev">${open?'▴':'▾'}</span>
+    </div>${open?`<div class="bdetail">${det}</div>`:''}`;
+  }).join('');
+  document.getElementById('betList').innerHTML=
+    `<div class="slabel">🗳️ ¿Quién será campeón?</div><div class="cpulse">${pulse}</div>`+
+    `<div class="slabel">🏁 La carrera del bonus</div>`+
+    `<div class="bhint">Toca cualquier nombre para desplegar todas sus apuestas. Verde = acertado y cobrado · rojo tachado = caído · el resto sigue en juego.</div>${race}`;
 }
 
 function bonusPoints(j){
@@ -2220,7 +2278,9 @@ async function fetchScorers(){
 }
 
 function initSel(){
-  document.getElementById('playerSel').innerHTML=PLAYERS.map((p,j)=>`<option value="${j}">${p}</option>`).join('');
+  // el desplegable de jugador ya no existe: la pestaña Apuestas es ahora la carrera del bonus
+  const el=document.getElementById('playerSel');
+  if(el)el.innerHTML=PLAYERS.map((p,j)=>`<option value="${j}">${p}</option>`).join('');
 }
 
 async function refresh(){
