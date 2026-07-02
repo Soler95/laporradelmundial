@@ -1725,7 +1725,7 @@ function buildNews(){
     if(!name)return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
       b:`Hoy toca hablar de ${cafe.t}. ${cafe.s}<br><br>Quisiéramos comparar esta historia con alguno de ustedes, pero el Salón de la Fama aún no tiene titulares: ni un mérito, ni siquiera una vergüenza consolidada. Quince participantes y ni medio personaje. La historia del fútbol tiene de todo; esta Porra, de momento, no tiene nada. Volveremos cuando alguno haga algo digno de mención, para bien o (más probable) para mal.`};
     return {t:`☕ LA HORA DEL CAFÉ · Mundial de historias`,
-      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>${(function(){const j=jab(pick(PLAYERS,day+'cafejw'),day+'cafej');return j?'<b>Y de propina:</b> '+j+'<br><br>':'';})()}Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros.`};
+      b:`Hoy toca hablar de <b>${cafe.t}</b>. ${cafe.s}<br><br>${cafe.r.split('{N}').join(name).split('{V}').join(val)}<br><br>${(function(){const j=jab(pick(PLAYERS,day+'cafejw'),day+'cafej');return j?'<b>Y de propina:</b> '+j+'<br><br>':'';})()}Mañana, más historia y más vergüenza. El café lo ponen ustedes; las verdades, nosotros, por eso os recordamos que Ander la tiene pequeña.`};
   }
 
   // ── ☕ ANÁLISIS MATINAL (visible desde las 9:00 hora de Madrid) ──
