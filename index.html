@@ -246,6 +246,7 @@ select{
 .bko{color:var(--red);font-weight:700}
 .bpend{color:var(--mut)}
 .bpts{font-weight:800;color:var(--gold2);font-size:.98rem;font-variant-numeric:tabular-nums}
+.bmax{font-size:.55rem;color:var(--dim);font-weight:600;font-variant-numeric:tabular-nums}
 .bchev{color:var(--dim);font-size:.72rem;min-width:14px;text-align:center}
 .bdetail{
   border:1px solid var(--gold);border-top:none;
@@ -759,7 +760,75 @@ function renderBets(){
   document.getElementById('betList').innerHTML=
     `<div class="slabel">🗳️ ¿Quién será campeón?</div><div class="cpulse">${pulse}</div>`+
     `<div class="slabel">🏁 La carrera del bonus</div>`+
-    `<div class="bhint">Toca cualquier nombre para desplegar todas sus apuestas. Verde = acertado y cobrado · rojo tachado = caído · el resto sigue en juego.</div>${race}`;
+    `<div class="bhint">Toca cualquier nombre para desplegar todas sus apuestas. Verde = acertado y cobrado · rojo tachado = caído · el resto sigue en juego.</div>${race}`+
+    renderRoundView();
+}
+
+// ── 🔎 RONDA A RONDA: filtro por ronda con clasificados/eliminados y puntos ──
+let BET_ROUND=null;      // ronda seleccionada ('auto' al arrancar)
+let OPEN_RB=new Set();   // tarjetas desplegadas en rondas compactas
+function selRound(k){BET_ROUND=k;renderBets();}
+function toggleRB(j){OPEN_RB.has(j)?OPEN_RB.delete(j):OPEN_RB.add(j);renderBets();}
+function renderRoundView(){
+  const RDEFS=[
+    ['r32','16avos',BONUS.r32,true],
+    ['r16','Octavos',BONUS.r16,true],
+    ['qf','Cuartos',BONUS.qf,false],
+    ['sf','Semis',BONUS.sf,false],
+    ['fin','Final',BONUS.fin,false],
+    ['champ','👑 Campeón',null,false],
+  ];
+  // ronda por defecto: la más avanzada con cruces ya conocidos (si no, 16avos)
+  if(BET_ROUND===null){
+    BET_ROUND='r32';
+    ['r16','qf','sf','fin'].forEach(k=>{if(QUALIFIED[k]&&QUALIFIED[k].size)BET_ROUND=k;});
+  }
+  const pills=RDEFS.map(([k,lab])=>
+    `<span class="chip${BET_ROUND===k?' sel':''}" onclick="selRound('${k}')">${lab}</span>`
+  ).join('');
+  const def=RDEFS.find(r=>r[0]===BET_ROUND)||RDEFS[0];
+  const key=def[0],rlab=def[1],val=def[2],compact=def[3];
+  // filas por jugador: estado y puntos DE ESA RONDA
+  const rows=PLAYERS.map((p,j)=>{
+    let ok=0,dead=0,pend=0,pts=0,max=0,chips=[];
+    if(key==='champ'){
+      [['champ',PICKS.champ[j],BONUS.champ,'👑'],['third',PICKS.third[j],BONUS.third,'🥉']].forEach(([kk,t,v,em])=>{
+        if(!t)return;
+        const c=tagClass(t,kk);
+        if(c===' ok'){ok++;pts+=v;max+=v;}
+        else if(c===' ko')dead++;
+        else{pend++;max+=v;}
+        chips.push(`<span class="btag${c}">${em} ${t} <span style="opacity:.6">+${v}</span></span>`);
+      });
+    }else{
+      PICKS[key][j].forEach(t=>{
+        const c=tagClass(t,key);
+        if(c===' ok'){ok++;pts+=val;max+=val;}
+        else if(c===' ko')dead++;
+        else{pend++;max+=val;}
+        chips.push(`<span class="btag${c}">${t}</span>`);
+      });
+    }
+    return{p,j,ok,dead,pend,pts,max,chips};
+  }).sort((a,b)=>b.pts-a.pts||a.dead-b.dead||b.ok-a.ok);
+  const med=['🥇','🥈','🥉'];
+  const cards=rows.map((r,i)=>{
+    const open=!compact||OPEN_RB.has(r.j);
+    const clickable=compact?` onclick="toggleRB(${r.j})"`:'';
+    const chev=compact?`<span class="bchev">${open?'▴':'▾'}</span>`:'';
+    return `<div class="brow${open&&compact?' open':''}"${clickable}${compact?'':' style="cursor:default"'}>
+      <span class="bpos">${med[i]||(i+1)}</span>
+      <div class="bmain"><div class="bname">${r.p}</div>
+      <div class="bsub"><span class="bok">✓ ${r.ok}</span> · <span class="bko">✗ ${r.dead}</span> · <span class="bpend">⏳ ${r.pend}</span></div></div>
+      <div style="text-align:right"><div class="bpts">+${r.pts}</div><div class="bmax">máx ${r.max}</div></div>${chev}
+    </div>${open?`<div class="bdetail"${compact?'':' style="border-color:var(--line)"'}><div class="btags" style="padding-bottom:.45rem">${r.chips.join('')}</div></div>`:''}`;
+  }).join('');
+  return `<div class="slabel">🔎 Ronda a ronda</div>
+    <div class="chips" style="margin:.1rem 0 .55rem">${pills}</div>
+    <div class="bhint">${rlab==='👑 Campeón'
+      ?'Las apuestas a una carta: campeón (+20) y 3er puesto (+8). Ordenado por puntos ya cobrados.'
+      :`Equipos que cada uno metió en ${rlab.toLowerCase()}: verde = clasificado y cobrado (+${val}) · rojo = eliminado · neutro = vivo, pendiente. "Máx" = a lo que aún puede llegar en esta ronda.${compact?' Toca un nombre para ver sus equipos.':''}`}</div>
+    ${cards}`;
 }
 
 function bonusPoints(j){
